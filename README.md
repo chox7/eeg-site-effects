@@ -4,7 +4,7 @@
 
 This repository contains the source code and analysis for my thesis. The project tackles a critical challenge in medical machine learning: the "site effect," which is the systematic, non-biological variance that arises when combining data from different medical centers. This effect can severely degrade the performance and generalizability of diagnostic models.
 
-**The complete thesis is available [here](thesis/Investigating_Site_Effects_in_Multi_Center_EEG_Data_for_Neuroscreening__A_Machine_Learning_Approach.pdf).** 
+**The complete thesis is available [here](paper/Investigating_Site_Effects_in_Multi_Center_EEG_Data_for_Neuroscreening__A_Machine_Learning_Approach.pdf).** 
 
 ---
 
