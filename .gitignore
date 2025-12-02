@@ -1,3 +1,45 @@
+# Project Data & Models
+/data/
+/models/
+catboost_info/
+old/
+*/shap_data/*
+*/tables/*
+
+# Virtual Environments
+venv/
+env/
+.venv/
+.env/
+
+# Python Cache & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# IDE & OS specific
+.idea/
+.vscode/
 .DS_Store
-datasets/
-**/.ipynb_checkpoints/
+Thumbs.db
+
+# Secrets & Config
+*.env
+*.key
+*.json
+secrets.yaml
+
+# Logs & Temp Files
+*.log
+*~
+*.swp
+*.swo
+
+# Build & Distribution
+dist/
+build/
+*.egg-info/
+*.egg
