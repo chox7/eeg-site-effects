@@ -26,6 +26,18 @@ from src.data.preprocessing.quality_report import (
     save_site_comparison_report,
     print_site_comparison
 )
+from src.data.preprocessing.visualization import (
+    plot_signal_comparison,
+    plot_power_spectrum_comparison,
+    plot_preprocessing_summary,
+    save_preprocessing_report
+)
+from src.data.preprocessing.site_comparison import (
+    plot_rejection_rates_by_site,
+    plot_signal_quality_by_site,
+    plot_site_comparison_dashboard,
+    plot_metric_distribution_by_site
+)
 
 __all__ = [
     'preprocess_raw_eeg',
@@ -43,5 +55,13 @@ __all__ = [
     'metrics_to_dataframe',
     'save_site_comparison_report',
     'print_site_comparison',
+    'plot_signal_comparison',
+    'plot_power_spectrum_comparison',
+    'plot_preprocessing_summary',
+    'save_preprocessing_report',
+    'plot_rejection_rates_by_site',
+    'plot_signal_quality_by_site',
+    'plot_site_comparison_dashboard',
+    'plot_metric_distribution_by_site',
     'ChannelsError',
 ]
