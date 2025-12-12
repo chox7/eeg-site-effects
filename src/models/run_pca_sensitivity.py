@@ -34,7 +34,7 @@ RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
 
-METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
+METHODS = ['neurocombat', 'covbat']
 
 # --- PCA Parameters ---
 PCA_VARIANTS = [None, 0.99, 0.95, 0.90, 0.80]
@@ -215,9 +215,13 @@ def run_pathology_classification(X, y, info_df, method, pca_var):
             X_test_norm = pd.DataFrame(columns=X.columns)
             y_test_norm = pd.Series(dtype=int)
         else:
-            X_calib, X_test_norm, y_calib, y_test_norm = train_test_split(
-                X_site_norm, y_site_norm, train_size=K_CALIBRATION, random_state=RANDOM_STATE
+            calib_idx, test_idx = train_test_split(
+                X_site_norm.index, train_size=K_CALIBRATION, random_state=RANDOM_STATE
             )
+            X_calib = X_site_norm.loc[calib_idx]
+            X_test_norm = X_site_norm.loc[test_idx]
+            y_calib = y_site_norm.loc[calib_idx]
+            y_test_norm = y_site_norm.loc[test_idx]
 
         # Construct Final Test Set (Remaining Normals + All Pathologicals from site)
         X_test_full = pd.concat([X_test_norm, X_site[~site_norm_mask]])
