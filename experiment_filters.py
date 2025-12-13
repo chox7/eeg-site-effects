@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 from src.data.config import FilterConfig, PreprocessingConfig
-from src.data.feature_extraction import map_edf_to_samples_with_metrics
+from src.data import map_edf_to_samples_with_metrics
 from src.data.preprocessing import (
     MetricsAggregator,
     print_site_comparison,
@@ -92,6 +92,7 @@ def process_single_file_with_config(exam_id, institution_id, idx, edf_dir, data_
         )
         return idx, features, metrics
     except Exception as e:
+        print(e)
         return idx, None, None
 
 
@@ -290,7 +291,7 @@ if __name__ == "__main__":
     print("="*80)
 
     # Load dataset
-    df_info = pd.read_csv('datasets/ELM19/ELM19_enriched_info_filtered.csv')
+    df_info = pd.read_csv('data/ELM19/filtered/ELM19_info_filtered.csv')
     df_info = df_info.reset_index(drop=True)
 
     print(f"\nDataset: {len(df_info)} files")
@@ -301,10 +302,10 @@ if __name__ == "__main__":
     # Use sample_size=100 for quick testing
     results, base_path = run_filter_experiment(
         df_info,
-        edf_dir="datasets/ELM19/raw/ELM19/ELM19_edfs",
+        edf_dir="data/ELM19/raw/ELM19/ELM19_edfs",
         data_group="ELM19",
-        output_base="datasets/ELM19/experiments",
-        num_workers=10,
+        output_base="data/ELM19/experiments",
+        num_workers=24,
         sample_size=None  # Change to None for full dataset!
     )
 

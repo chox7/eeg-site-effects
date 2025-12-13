@@ -47,7 +47,6 @@ class PreprocessingMetrics:
 
     # Timing
     processing_timestamp: str
-    processing_duration_seconds: Optional[float] = None
 
     # Signal properties
     sampling_frequency_hz: float
