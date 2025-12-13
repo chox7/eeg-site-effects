@@ -17,13 +17,13 @@ from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 
-RESULTS_PATH_SITE = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_site.csv'
+RESULTS_PATH_SITE = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_site_full.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_SITE), exist_ok=True)
 
-RESULTS_PATH_PATHO = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_patho.csv'
+RESULTS_PATH_PATHO = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_patho_full.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_PATHO), exist_ok=True)
 
-LOG_FILE_PATH = 'results/logs/04_pca_sensitivity/pca_sensitivity_log.log'
+LOG_FILE_PATH = 'results/logs/04_pca_sensitivity/pca_sensitivity_log_full.log'
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
 COVARIATES = ['age', 'gender']
@@ -34,10 +34,10 @@ RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
 
-METHODS = ['neurocombat', 'covbat']
-
+#METHODS = ['neurocombat', 'covbat']
+METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
 # --- PCA Parameters ---
-PCA_VARIANTS = [None, 0.99, 0.95, 0.90, 0.80]
+PCA_VARIANTS = [None] #, 0.99, 0.95, 0.90, 0.80]
 
 # --- CatBoost Parameters ---
 CATBOOST_PARAMS_SITE = {
@@ -81,17 +81,17 @@ def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
     X_calib_s = scaler.transform(X_calib) if X_calib is not None else None
 
     # 2. PCA
-    if pca_variance is not None:
-        pca = PCA(n_components=pca_variance, random_state=RANDOM_STATE)
-        X_train_p = pca.fit_transform(X_train_s)
-        X_test_p = pca.transform(X_test_s)
-        X_calib_p = pca.transform(X_calib_s) if X_calib_s is not None else None
-        n_comps = pca.n_components_
-    else:
-        X_train_p = X_train_s
-        X_test_p = X_test_s
-        X_calib_p = X_calib_s
-        n_comps = X_train.shape[1]
+    #if pca_variance is not None:
+    pca = PCA(n_components=pca_variance, random_state=RANDOM_STATE)
+    X_train_p = pca.fit_transform(X_train_s)
+    X_test_p = pca.transform(X_test_s)
+    X_calib_p = pca.transform(X_calib_s) if X_calib_s is not None else None
+    n_comps = pca.n_components_
+    # else:
+    #     X_train_p = X_train_s
+    #     X_test_p = X_test_s
+    #     X_calib_p = X_calib_s
+    #     n_comps = X_train.shape[1]
 
     # --- RESTORE INDICES ---
     X_train_p = pd.DataFrame(X_train_p, index=X_train.index)
@@ -317,6 +317,12 @@ def main():
             'age_dec': 'age', 'patient_sex': 'gender',
             'institution_id': 'hospital_id', 'classification': 'pathology_label'
         })
+
+        all_hospitals = info['hospital_id'].unique()
+        info['hospital_id'] = info['hospital_id'].astype(
+            pd.CategoricalDtype(categories=all_hospitals, ordered=False)
+        )
+
         label_map = {'norm': 0, 'patho': 1, 'normal': 0, 'pathological': 1}
         y_patho = info['pathology_label'].map(label_map)
         y_site = info['hospital_id']
