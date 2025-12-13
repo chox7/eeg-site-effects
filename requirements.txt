@@ -15,3 +15,7 @@ joblib~=1.5.1
 combatlearn
 fastparquet
 shap
+mne~=1.11.0
+mne-features~=0.3.1
+mne_connectivity~=0.70
+pyriemann~=0.9
