@@ -1,4 +1,5 @@
 # Project Data & Models
+.claude/
 /data/
 /models/
 catboost_info/
