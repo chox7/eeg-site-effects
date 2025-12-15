@@ -2,6 +2,7 @@
 
 # Run site and pathology classification for each filter configuration
 # This script compares different EEG filter settings using raw (no harmonization) method
+# Note: Run `pip install -e .` from project root first
 
 set -e  # Exit on error
 
