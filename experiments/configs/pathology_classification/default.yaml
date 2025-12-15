@@ -1,0 +1,43 @@
+# Pathology Classification Experiment Configuration
+# Default configuration matching the original hardcoded values
+
+experiment_name: "patho_clf_default"
+
+paths:
+  info_file: "data/ELM19/filtered/ELM19_info_filtered.csv"
+  features_file: "data/ELM19/filtered/ELM19_features_filtered.csv"
+  results_file: "results/tables/05_experiment_filters/exp02_patho_clf_results.csv"
+  pipeline_save_dir: "models/05_experiment_filters/exp02_patho_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/05_experiment_filters/exp02_patho_clf"
+
+harmonization_methods:
+  - raw
+  - sitewise
+  - combat
+  - neurocombat
+  - covbat
+
+catboost_params:
+  iterations: 700
+  learning_rate: 0.08519504279364008
+  depth: 6
+  l2_leaf_reg: 1.1029971156522604
+  colsample_bylevel: 0.019946626267165004
+  task_type: "CPU"
+  thread_count: -1
+  boosting_type: "Plain"
+  bootstrap_type: "MVS"
+
+cv:
+  n_splits: 5
+  random_state: 42
+  k_calibration: 30
+
+ensemble_size: 30
+
+data:
+  covariates:
+    - age
+    - gender
+  site_column: "hospital_id"
+  label_column: "pathology_label"

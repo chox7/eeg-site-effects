@@ -1,3 +1,25 @@
+#!/usr/bin/env python
+"""
+Pathology Classification Experiment
+
+Runs Leave-One-Site-Out cross-validation for pathology classification
+with a calibration subset strategy.
+
+Usage:
+    # With config file (recommended)
+    python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml
+
+    # With config file and specific method
+    python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml --method combat
+
+    # Run all methods from config
+    python experiments/ml/pathology_classification.py -c experiments/configs/pathology_classification/default.yaml
+
+    # Legacy mode (backward compatible, uses defaults)
+    python experiments/ml/pathology_classification.py raw
+"""
+
+import argparse
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier, metrics
@@ -8,6 +30,7 @@ from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 from src.harmonization.relief import RELIEFHarmonizer
 from src.models.gbe import GBE
+from src.config import load_pathology_classification_config, PathologyClassificationConfig
 
 import os
 import logging
@@ -15,41 +38,63 @@ import sys
 import joblib
 
 
-# --- Setup Logger ---
 logger = logging.getLogger(__name__)
 
-# --- Constants ---
-RANDOM_STATE = 42
-K_CALIBRATION = 30
 
-INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
-FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Run pathology classification experiment with harmonization methods.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run with YAML config (all methods)
+  python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml
 
-RESULTS_PATH = 'results/tables/05_experiment_filters/exp02_site_clf_results.csv'
+  # Run with YAML config (specific method)
+  python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml --method combat
 
-PIPELINE_SAVE_DIR = 'models/05_experiment_filters/exp02_site_clf_pipelines'
-SHAP_DATA_SAVE_DIR = 'results/shap_data/05_experiment_filters/exp02_site_clf'
+  # Legacy mode (backward compatible)
+  python experiments/ml/pathology_classification.py raw
+        """
+    )
 
-COVARIATES = ['age', 'gender']
-SITE_COLUMN = 'hospital_id'
-LABEL_COLUMN = 'pathology_label'
+    parser.add_argument(
+        '--config', '-c',
+        type=str,
+        default=None,
+        help='Path to YAML configuration file'
+    )
 
-# --- CatBoost Parameters ---
-CATBOOST_PARAMS = {'iterations': 700,
-          'learning_rate': 0.08519504279364008,
-          'depth': 6.0,
-          'l2_leaf_reg': 1.1029971156522604,
-          'colsample_bylevel': 0.019946626267165004,
-          'objective': 'Logloss',
-          'thread_count': -1,
-          'boosting_type': 'Plain',
-          'bootstrap_type': 'MVS',
-          'eval_metric': metrics.AUC(),
-          'allow_writing_files': False,
-}
+    parser.add_argument(
+        '--method', '-m',
+        type=str,
+        default=None,
+        choices=['raw', 'sitewise', 'combat', 'neurocombat', 'covbat', 'relief'],
+        help='Specific harmonization method to run (overrides config)'
+    )
+
+    # Legacy positional argument for backward compatibility
+    parser.add_argument(
+        'legacy_method',
+        nargs='?',
+        default=None,
+        help='[DEPRECATED] Harmonization method (use --method instead)'
+    )
+
+    return parser.parse_args()
+
+
+def get_catboost_params(config: PathologyClassificationConfig) -> dict:
+    """Convert config to CatBoost parameters dictionary."""
+    return config.catboost_params.to_catboost_dict(
+        loss_function='Logloss',
+        eval_metric=metrics.AUC()
+    )
 
 
 def get_scores(y_true, y_prob, th=0.5):
+    """Calculate classification scores."""
     y_pred = y_prob > th
 
     mcc = matthews_corrcoef(y_true, y_pred)
@@ -61,27 +106,38 @@ def get_scores(y_true, y_prob, th=0.5):
 
     return mcc, acc, precision, recall, f1, auc
 
-def run_experiment(harmonization_method='raw', features_file_path=None):
+
+def run_experiment(config: PathologyClassificationConfig, harmonization_method: str = 'raw'):
     """
     Runs LOSO CV for pathology classification with calibration subset strategy.
-    """
 
+    Args:
+        config: Experiment configuration
+        harmonization_method: Name of harmonization method to use
+    """
     logger.info(f"Starting experiment: Pathology Classification (LOSO) with '{harmonization_method}'")
 
-    os.makedirs(PIPELINE_SAVE_DIR, exist_ok=True)
-    os.makedirs(SHAP_DATA_SAVE_DIR, exist_ok=True)
-    os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
+    # Create output directories
+    if config.paths.pipeline_save_dir:
+        os.makedirs(config.paths.pipeline_save_dir, exist_ok=True)
+    if config.paths.shap_data_save_dir:
+        os.makedirs(config.paths.shap_data_save_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(config.paths.results_file), exist_ok=True)
 
+    # Load data
     try:
-        info_df = pd.read_csv(INFO_FILE_PATH)
-        features_df = pd.read_csv(features_file_path if features_file_path is not None else FEATURES_FILE_PATH)
+        info_df = pd.read_csv(config.paths.info_file)
+        features_df = pd.read_csv(config.paths.features_file)
         logger.info("Data files loaded successfully.")
-    except FileNotFoundError:
+        logger.info(f"  Info file: {config.paths.info_file}")
+        logger.info(f"  Features file: {config.paths.features_file}")
+    except FileNotFoundError as e:
         logger.error(f"Error: Data files not found.")
-        logger.error(f"Checked: {INFO_FILE_PATH}")
-        logger.error(f"Checked: {features_file_path if features_file_path is not None else FEATURES_FILE_PATH}")
-        return
+        logger.error(f"Checked: {config.paths.info_file}")
+        logger.error(f"Checked: {config.paths.features_file}")
+        raise e
 
+    # Rename columns to standard names
     info_df = info_df.rename(columns={
         'age_dec': 'age',
         'patient_sex': 'gender',
@@ -94,10 +150,13 @@ def run_experiment(harmonization_method='raw', features_file_path=None):
     )
 
     label_map = {'norm': 0, 'patho': 1, 'normal': 0, 'pathological': 1}
-    y = info_df['pathology_label'].map(label_map)
+    y = info_df[config.data.label_column].map(label_map)
 
     X = features_df
-    groups = info_df[SITE_COLUMN]
+    groups = info_df[config.data.site_column]
+
+    # Get CatBoost parameters from config
+    catboost_params = get_catboost_params(config)
 
     logo = LeaveOneGroupOut()
     all_results_list = []
@@ -122,16 +181,16 @@ def run_experiment(harmonization_method='raw', features_file_path=None):
         X_site_norm = X_site[site_norm_mask]
         y_site_norm = y_site[site_norm_mask]
 
-        if len(X_site_norm) < K_CALIBRATION:
+        k_calibration = config.cv.k_calibration
+        if len(X_site_norm) < k_calibration:
             logger.warning(
-                f"Hospital {hospital_test} has fewer than {K_CALIBRATION} normal samples ({len(X_site_norm)}). Using all for calibration.")
+                f"Hospital {hospital_test} has fewer than {k_calibration} normal samples ({len(X_site_norm)}). Using all for calibration.")
             X_calib = X_site_norm
-            # y_calib = y_site_norm
             X_test_norm = pd.DataFrame(columns=X.columns)  # Empty
             y_test_norm = pd.Series(dtype=int)
         else:
             X_calib, X_test_norm, y_calib, y_test_norm = train_test_split(
-                X_site_norm, y_site_norm, train_size=K_CALIBRATION, random_state=RANDOM_STATE
+                X_site_norm, y_site_norm, train_size=k_calibration, random_state=config.cv.random_state
             )
 
         # Construct Fit Set for Harmonizer (Train Normals + Calibration Normals)
@@ -150,29 +209,38 @@ def run_experiment(harmonization_method='raw', features_file_path=None):
 
         # --- 3. Harmonization ---
         harmonizer = None
-        info_fit = info_df.loc[X_fit_harmonizer.index]
         if harmonization_method == 'combat':
             harmonizer = ComBat(
-                batch=info_df[SITE_COLUMN],
+                batch=info_df[config.data.site_column],
                 method='johnson'
             )
         elif harmonization_method == 'neurocombat':
             harmonizer = ComBat(
-                batch=info_df[SITE_COLUMN],
+                batch=info_df[config.data.site_column],
                 discrete_covariates=info_df[['gender']],
                 continuous_covariates=info_df[['age']],
                 method='fortin'
             )
         elif harmonization_method == 'covbat':
             harmonizer = ComBat(
-                batch=info_df[SITE_COLUMN],
+                batch=info_df[config.data.site_column],
                 discrete_covariates=info_df[['gender']],
                 continuous_covariates=info_df[['age']],
                 method='chen'
             )
         elif harmonization_method == 'sitewise':
             harmonizer = SiteWiseStandardScaler(
-                batch=info_df[SITE_COLUMN]
+                batch=info_df[config.data.site_column]
+            )
+        elif harmonization_method == 'relief':
+            cov = info_df[config.data.covariates]
+            harmonizer = RELIEFHarmonizer(
+                batch=info_df[config.data.site_column],
+                mod=cov,
+                scale_features=True,
+                eps=1e-3,
+                max_iter=1000,
+                verbose=True
             )
 
         if harmonizer:
@@ -189,7 +257,7 @@ def run_experiment(harmonization_method='raw', features_file_path=None):
 
         # --- 4. Classification ---
         logger.info("Training classifier...")
-        clf = GBE(esize=30, fun_model=CatBoostClassifier, **CATBOOST_PARAMS)
+        clf = GBE(esize=config.ensemble_size, fun_model=CatBoostClassifier, **catboost_params)
 
         clf.fit(X_train_harm, y_train_classifier, verbose=False)
 
@@ -205,52 +273,87 @@ def run_experiment(harmonization_method='raw', features_file_path=None):
         all_results_list.append(scores)
         logger.info(f"Hospital {hospital_test} - MCC: {scores['mcc']:.4f}, AUC: {scores['auc']:.4f}")
 
-        logger.info("Saving pipeline and data for SHAP...")
+        # Save pipeline and data for SHAP
+        if config.paths.pipeline_save_dir and config.paths.shap_data_save_dir:
+            logger.info("Saving pipeline and data for SHAP...")
 
-        steps = []
-        if harmonizer:
-            steps.append(('harmonize', harmonizer))
-        steps.append(('clf', clf))
+            steps = []
+            if harmonizer:
+                steps.append(('harmonize', harmonizer))
+            steps.append(('clf', clf))
 
-        pipeline = Pipeline(steps=steps)
+            pipeline = Pipeline(steps=steps)
 
-        # Save Pipeline
-        pipeline_filename = f"{harmonization_method}_{hospital_test}_pipeline.joblib"
-        joblib.dump(pipeline, os.path.join(PIPELINE_SAVE_DIR, pipeline_filename))
+            # Save Pipeline
+            pipeline_filename = f"{harmonization_method}_{hospital_test}_pipeline.joblib"
+            joblib.dump(pipeline, os.path.join(config.paths.pipeline_save_dir, pipeline_filename))
 
-        # Save Test Data (Untransformed X_test_full + Labels)
-        test_data_filename = f"{harmonization_method}_{hospital_test}_test_data.parquet"
-        X_test_save = X_test_full.copy()
-        X_test_save['y_true'] = y_test_full
-        X_test_save.to_parquet(os.path.join(SHAP_DATA_SAVE_DIR, test_data_filename))
+            # Save Test Data (Untransformed X_test_full + Labels)
+            test_data_filename = f"{harmonization_method}_{hospital_test}_test_data.parquet"
+            X_test_save = X_test_full.copy()
+            X_test_save['y_true'] = y_test_full
+            X_test_save.to_parquet(os.path.join(config.paths.shap_data_save_dir, test_data_filename))
 
     # --- Save Results ---
     df_results = pd.DataFrame(all_results_list)
-    file_exists = os.path.isfile(RESULTS_PATH)
-    df_results.to_csv(RESULTS_PATH, mode='a', header=not file_exists, index=False)
+    file_exists = os.path.isfile(config.paths.results_file)
+    df_results.to_csv(config.paths.results_file, mode='a', header=not file_exists, index=False)
 
     mean_mcc = df_results['mcc'].mean()
     mean_auc = df_results['auc'].mean()
+    logger.info(f"Results saved to: {config.paths.results_file}")
     logger.info(f"Finished '{harmonization_method}'. Mean MCC: {mean_mcc:.4f}, Mean AUC: {mean_auc:.4f}")
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        handlers=[logging.StreamHandler(sys.stdout)])
 
+def main():
+    """Main entry point."""
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+
+    # Setup Python path for imports
     PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     SRC_PATH = os.path.join(PROJECT_ROOT, 'src')
     if SRC_PATH not in sys.path:
-        sys.path.append(SRC_PATH)
+        sys.path.insert(0, SRC_PATH)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
 
-    if len(sys.argv) > 1:
-        method = sys.argv[1]
+    args = parse_args()
+
+    # Load configuration
+    config = load_pathology_classification_config(args.config)
+
+    if config.experiment_name:
+        logger.info(f"Running experiment: {config.experiment_name}")
+
+    # Determine which methods to run
+    if args.method:
+        # CLI --method flag takes precedence
+        methods_to_run = [args.method]
+    elif args.legacy_method:
+        # Legacy positional argument (backward compatibility)
+        logger.warning("Using legacy positional argument. Consider using --method instead.")
+        methods_to_run = [args.legacy_method]
     else:
-        method = 'raw'
+        # Run all methods from config
+        methods_to_run = config.harmonization_methods
 
-    if method not in ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']:
-        logger.error(f"Error: Unknown method '{method}'.")
-        logger.error("Usage: python src/models/run_pathology_classification.py [raw|sitewise|combat|neurocombat|covbat]")
-        sys.exit(1)
+    # Validate methods
+    valid_methods = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat', 'relief']
+    for method in methods_to_run:
+        if method not in valid_methods:
+            logger.error(f"Error: Unknown method '{method}'.")
+            logger.error(f"Valid methods: {valid_methods}")
+            sys.exit(1)
 
-    run_experiment(harmonization_method=method)
+    # Run experiments
+    for method in methods_to_run:
+        run_experiment(config, harmonization_method=method)
+
+
+if __name__ == '__main__':
+    main()
