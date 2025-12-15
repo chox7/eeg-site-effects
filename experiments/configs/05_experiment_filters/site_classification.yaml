@@ -1,14 +1,14 @@
-# Site Classification Experiment Configuration
-# Default configuration matching the original hardcoded values
+# Site Classification - 05_experiment_filters
+# Testing different harmonization methods on filtered+normalized data
 
-experiment_name: "site_clf_default"
+experiment_name: "05_experiment_filters_site_clf"
 
 paths:
   info_file: "data/ELM19/filtered/ELM19_info_filtered_norm.csv"
   features_file: "data/ELM19/filtered/ELM19_features_filtered_norm.csv"
-  results_file: "results/tables/05_experiment_filters/exp01_site_clf_results.csv"
-  pipeline_save_dir: "models/05_experiment_filters/exp01_site_clf_pipelines"
-  shap_data_save_dir: "results/shap_data/05_experiment_filters/exp01_site_clf"
+  results_file: "results/tables/05_experiment_filters/site_clf_results.csv"
+  pipeline_save_dir: "models/05_experiment_filters/site_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/05_experiment_filters/site_clf"
 
 harmonization_methods:
   - raw
