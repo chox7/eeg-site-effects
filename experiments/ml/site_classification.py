@@ -14,9 +14,6 @@ Usage:
 
     # Run all methods from config
     python experiments/ml/site_classification.py -c experiments/configs/site_classification/default.yaml
-
-    # Legacy mode (backward compatible, uses defaults)
-    python experiments/ml/site_classification.py raw
 """
 
 import argparse
@@ -52,9 +49,6 @@ Examples:
 
   # Run with YAML config (specific method)
   python experiments/ml/site_classification.py --config experiments/configs/site_classification/default.yaml --method combat
-
-  # Legacy mode (backward compatible)
-  python experiments/ml/site_classification.py raw
         """
     )
 
@@ -85,14 +79,6 @@ Examples:
         type=str,
         default=None,
         help='Tag to identify this run in results (e.g., filter name)'
-    )
-
-    # Legacy positional argument for backward compatibility
-    parser.add_argument(
-        'legacy_method',
-        nargs='?',
-        default=None,
-        help='[DEPRECATED] Harmonization method (use --method instead)'
     )
 
     return parser.parse_args()
@@ -183,7 +169,10 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
 
         # Build harmonization step
         if harmonization_method == 'combat':
-            pipeline_steps.append(("harmonize", ComBat(batch=sites, method='johnson')))
+            pipeline_steps.append(("harmonize", ComBat(
+                batch=sites,
+                method='johnson'
+            )))
         elif harmonization_method == 'neurocombat':
             pipeline_steps.append(("harmonize", ComBat(
                 batch=sites,
@@ -199,15 +188,8 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
                 method='chen'
             )))
         elif harmonization_method == 'sitewise':
-            pipeline_steps.append(("harmonize", SiteWiseStandardScaler(batch=sites)))
-        elif harmonization_method == 'relief':
-            pipeline_steps.append(("harmonize", RELIEFHarmonizer(
-                batch=sites,
-                mod=cov,
-                scale_features=True,
-                eps=1e-3,
-                max_iter=1000,
-                verbose=True
+            pipeline_steps.append(("harmonize", SiteWiseStandardScaler(
+                batch=sites
             )))
 
         pipeline_steps.append(("clf", CatBoostClassifier(**catboost_params)))
@@ -290,16 +272,12 @@ def main():
     if args.method:
         # CLI --method flag takes precedence
         methods_to_run = [args.method]
-    elif args.legacy_method:
-        # Legacy positional argument (backward compatibility)
-        logger.warning("Using legacy positional argument. Consider using --method instead.")
-        methods_to_run = [args.legacy_method]
     else:
         # Run all methods from config
         methods_to_run = config.harmonization_methods
 
     # Validate methods
-    valid_methods = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat', 'relief']
+    valid_methods = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
     for method in methods_to_run:
         if method not in valid_methods:
             logger.error(f"Error: Unknown method '{method}'.")

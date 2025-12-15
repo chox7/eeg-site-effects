@@ -14,9 +14,6 @@ Usage:
 
     # Run all methods from config
     python experiments/ml/pathology_classification.py -c experiments/configs/pathology_classification/default.yaml
-
-    # Legacy mode (backward compatible, uses defaults)
-    python experiments/ml/pathology_classification.py raw
 """
 
 import argparse
@@ -53,9 +50,6 @@ Examples:
 
   # Run with YAML config (specific method)
   python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml --method combat
-
-  # Legacy mode (backward compatible)
-  python experiments/ml/pathology_classification.py raw
         """
     )
 
@@ -70,7 +64,7 @@ Examples:
         '--method', '-m',
         type=str,
         default=None,
-        choices=['raw', 'sitewise', 'combat', 'neurocombat', 'covbat', 'relief'],
+        choices=['raw', 'sitewise', 'combat', 'neurocombat', 'covbat'],
         help='Specific harmonization method to run (overrides config)'
     )
 
@@ -86,14 +80,6 @@ Examples:
         type=str,
         default=None,
         help='Tag to identify this run in results (e.g., filter name)'
-    )
-
-    # Legacy positional argument for backward compatibility
-    parser.add_argument(
-        'legacy_method',
-        nargs='?',
-        default=None,
-        help='[DEPRECATED] Harmonization method (use --method instead)'
     )
 
     return parser.parse_args()
@@ -248,16 +234,6 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
             harmonizer = SiteWiseStandardScaler(
                 batch=info_df[config.data.site_column]
             )
-        elif harmonization_method == 'relief':
-            cov = info_df[config.data.covariates]
-            harmonizer = RELIEFHarmonizer(
-                batch=info_df[config.data.site_column],
-                mod=cov,
-                scale_features=True,
-                eps=1e-3,
-                max_iter=1000,
-                verbose=True
-            )
 
         if harmonizer:
             logger.info("Fitting harmonizer (on Normals + Calibration)...")
@@ -357,16 +333,12 @@ def main():
     if args.method:
         # CLI --method flag takes precedence
         methods_to_run = [args.method]
-    elif args.legacy_method:
-        # Legacy positional argument (backward compatibility)
-        logger.warning("Using legacy positional argument. Consider using --method instead.")
-        methods_to_run = [args.legacy_method]
     else:
         # Run all methods from config
         methods_to_run = config.harmonization_methods
 
     # Validate methods
-    valid_methods = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat', 'relief']
+    valid_methods = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
     for method in methods_to_run:
         if method not in valid_methods:
             logger.error(f"Error: Unknown method '{method}'.")
