@@ -73,6 +73,20 @@ Examples:
         help='Specific harmonization method to run (overrides config)'
     )
 
+    parser.add_argument(
+        '--features', '-f',
+        type=str,
+        default=None,
+        help='Path to features CSV file (overrides config)'
+    )
+
+    parser.add_argument(
+        '--tag', '-t',
+        type=str,
+        default=None,
+        help='Tag to identify this run in results (e.g., filter name)'
+    )
+
     # Legacy positional argument for backward compatibility
     parser.add_argument(
         'legacy_method',
@@ -103,7 +117,7 @@ def get_scores(y_true, y_pred, hospitals):
     return scores
 
 
-def run_experiment(config: SiteClassificationConfig, harmonization_method: str = 'raw'):
+def run_experiment(config: SiteClassificationConfig, harmonization_method: str = 'raw', tag: str = None):
     """
     Runs a full 5-fold stratified CV for site classification
     for a single harmonization method.
@@ -111,8 +125,10 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
     Args:
         config: Experiment configuration
         harmonization_method: Name of harmonization method to use
+        tag: Optional tag to identify this run in results
     """
-    logger.info(f"Starting experiment: Site Classification with '{harmonization_method}'")
+    tag_str = f" [{tag}]" if tag else ""
+    logger.info(f"Starting experiment: Site Classification with '{harmonization_method}'{tag_str}")
 
     # Create output directories
     if config.paths.pipeline_save_dir:
@@ -208,6 +224,8 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         scores_fold = get_scores(y_test, preds, all_hospitals)
         scores_fold['method'] = harmonization_method
         scores_fold['fold'] = fold + 1
+        if tag:
+            scores_fold['tag'] = tag
         all_results_list.append(scores_fold)
         logger.info(f"Fold {fold + 1} Overall MCC: {scores_fold['mcc_overall']:.4f}")
 
@@ -260,6 +278,11 @@ def main():
     # Load configuration
     config = load_site_classification_config(args.config)
 
+    # Override features file if provided via CLI
+    if args.features:
+        config.paths.features_file = args.features
+        logger.info(f"Using features file from CLI: {args.features}")
+
     if config.experiment_name:
         logger.info(f"Running experiment: {config.experiment_name}")
 
@@ -285,7 +308,7 @@ def main():
 
     # Run experiments
     for method in methods_to_run:
-        run_experiment(config, harmonization_method=method)
+        run_experiment(config, harmonization_method=method, tag=args.tag)
 
 
 if __name__ == '__main__':

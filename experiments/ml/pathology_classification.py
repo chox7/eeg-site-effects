@@ -74,6 +74,20 @@ Examples:
         help='Specific harmonization method to run (overrides config)'
     )
 
+    parser.add_argument(
+        '--features', '-f',
+        type=str,
+        default=None,
+        help='Path to features CSV file (overrides config)'
+    )
+
+    parser.add_argument(
+        '--tag', '-t',
+        type=str,
+        default=None,
+        help='Tag to identify this run in results (e.g., filter name)'
+    )
+
     # Legacy positional argument for backward compatibility
     parser.add_argument(
         'legacy_method',
@@ -107,15 +121,17 @@ def get_scores(y_true, y_prob, th=0.5):
     return mcc, acc, precision, recall, f1, auc
 
 
-def run_experiment(config: PathologyClassificationConfig, harmonization_method: str = 'raw'):
+def run_experiment(config: PathologyClassificationConfig, harmonization_method: str = 'raw', tag: str = None):
     """
     Runs LOSO CV for pathology classification with calibration subset strategy.
 
     Args:
         config: Experiment configuration
         harmonization_method: Name of harmonization method to use
+        tag: Optional tag to identify this run in results
     """
-    logger.info(f"Starting experiment: Pathology Classification (LOSO) with '{harmonization_method}'")
+    tag_str = f" [{tag}]" if tag else ""
+    logger.info(f"Starting experiment: Pathology Classification (LOSO) with '{harmonization_method}'{tag_str}")
 
     # Create output directories
     if config.paths.pipeline_save_dir:
@@ -269,6 +285,8 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
         scores = {'accuracy': acc, 'precision': precision, 'recall': recall, 'f1-score': f1, 'auc': auc, 'mcc': mcc,
                   'hospital': hospital_test, 'method': harmonization_method, 'n_calib': len(X_calib),
                   'n_test': len(X_test_full)}
+        if tag:
+            scores['tag'] = tag
 
         all_results_list.append(scores)
         logger.info(f"Hospital {hospital_test} - MCC: {scores['mcc']:.4f}, AUC: {scores['auc']:.4f}")
@@ -327,6 +345,11 @@ def main():
     # Load configuration
     config = load_pathology_classification_config(args.config)
 
+    # Override features file if provided via CLI
+    if args.features:
+        config.paths.features_file = args.features
+        logger.info(f"Using features file from CLI: {args.features}")
+
     if config.experiment_name:
         logger.info(f"Running experiment: {config.experiment_name}")
 
@@ -352,7 +375,7 @@ def main():
 
     # Run experiments
     for method in methods_to_run:
-        run_experiment(config, harmonization_method=method)
+        run_experiment(config, harmonization_method=method, tag=args.tag)
 
 
 if __name__ == '__main__':
