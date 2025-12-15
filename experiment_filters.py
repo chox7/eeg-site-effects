@@ -29,29 +29,29 @@ logging.basicConfig(level=logging.WARNING)
 # =============================================================================
 
 FILTER_CONFIGS = {
-    "original": {
-        "description": "Original preprocessing from old code",
-        "filters": [
-            FilterConfig(type='highpass', f_pass=0.5, f_stop=0.1),
-            FilterConfig(type='lowpass', f_pass=40.0, f_stop=50.0),
-            FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
-        ]
-    },
-
-    "remove_low_freq_artifacts": {
-        "description": "Stricter highpass to remove drift and slow artifacts",
-        "filters": [
-            FilterConfig(type='highpass', f_pass=1.0, f_stop=0.3),
-            FilterConfig(type='lowpass', f_pass=40.0, f_stop=50.0),
-            FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
-        ]
-    },
+#     "original": {
+#         "description": "Original preprocessing from old code",
+#         "filters": [
+#             FilterConfig(type='highpass', f_pass=0.5, f_stop=0.1),
+#             FilterConfig(type='lowpass', f_pass=40.0, f_stop=50.0),
+#             FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
+#         ]
+#     },
+# 
+#     "remove_low_freq_artifacts": {
+#         "description": "Stricter highpass to remove drift and slow artifacts",
+#         "filters": [
+#             FilterConfig(type='highpass', f_pass=1.0, f_stop=0.3),
+#             FilterConfig(type='lowpass', f_pass=40.0, f_stop=50.0),
+#             FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
+#         ]
+#     },
 
     "remove_high_freq_artifacts": {
         "description": "Stricter lowpass to remove muscle and EMG artifacts",
         "filters": [
             FilterConfig(type='highpass', f_pass=0.5, f_stop=0.1),
-            FilterConfig(type='lowpass', f_pass=30.0, f_stop=35.0),
+            FilterConfig(type='lowpass', f_pass=30.0, f_stop=40.0),
             FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
         ]
     },
@@ -60,7 +60,7 @@ FILTER_CONFIGS = {
         "description": "Aggressive filtering on both ends: 1-30 Hz",
         "filters": [
             FilterConfig(type='highpass', f_pass=1.0, f_stop=0.3),
-            FilterConfig(type='lowpass', f_pass=30.0, f_stop=35.0),
+            FilterConfig(type='lowpass', f_pass=30.0, f_stop=40.0),
             FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
         ]
     },
@@ -69,7 +69,7 @@ FILTER_CONFIGS = {
         "description": "Very clean clinical EEG range: 1-25 Hz",
         "filters": [
             FilterConfig(type='highpass', f_pass=1.0, f_stop=0.5),
-            FilterConfig(type='lowpass', f_pass=25.0, f_stop=30.0),
+            FilterConfig(type='lowpass', f_pass=25.0, f_stop=35.0),
             FilterConfig(type='notch', notch_freq=50.0, notch_widths=10.0)
         ]
     },

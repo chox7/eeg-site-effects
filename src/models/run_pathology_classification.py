@@ -25,10 +25,10 @@ K_CALIBRATION = 30
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 
-RESULTS_PATH = 'results/tables/03_paradox_analysis/exp02_pathology_clf/exp02_pathology_clf_results.csv'
+RESULTS_PATH = 'results/tables/05_experiment_filters/exp02_site_clf_results.csv'
 
-PIPELINE_SAVE_DIR = 'models/03_paradox_analysis/exp02_pathology_clf_pipelines'
-SHAP_DATA_SAVE_DIR = 'results/shap_data/03_paradox_analysis/exp02_pathology_clf'
+PIPELINE_SAVE_DIR = 'models/05_experiment_filters/exp02_site_clf_pipelines'
+SHAP_DATA_SAVE_DIR = 'results/shap_data/05_experiment_filters/exp02_site_clf'
 
 COVARIATES = ['age', 'gender']
 SITE_COLUMN = 'hospital_id'
@@ -61,7 +61,7 @@ def get_scores(y_true, y_prob, th=0.5):
 
     return mcc, acc, precision, recall, f1, auc
 
-def run_experiment(harmonization_method='raw'):
+def run_experiment(harmonization_method='raw', features_file_path=None):
     """
     Runs LOSO CV for pathology classification with calibration subset strategy.
     """
@@ -74,12 +74,12 @@ def run_experiment(harmonization_method='raw'):
 
     try:
         info_df = pd.read_csv(INFO_FILE_PATH)
-        features_df = pd.read_csv(FEATURES_FILE_PATH)
+        features_df = pd.read_csv(features_file_path if features_file_path is not None else FEATURES_FILE_PATH)
         logger.info("Data files loaded successfully.")
     except FileNotFoundError:
         logger.error(f"Error: Data files not found.")
         logger.error(f"Checked: {INFO_FILE_PATH}")
-        logger.error(f"Checked: {FEATURES_FILE_PATH}")
+        logger.error(f"Checked: {features_file_path if features_file_path is not None else FEATURES_FILE_PATH}")
         return
 
     info_df = info_df.rename(columns={
