@@ -14,8 +14,11 @@ class GBE(BaseEstimator, ClassifierMixin):
         self.ensemble = []
         self.classes_ = None
 
+        # Extract base seed from params or use default
+        base_seed = model_params.pop('random_seed', 100)
+
         for e in range(self.esize):
-            model = fun_model(**model_params, random_seed=100 + e)
+            model = fun_model(**model_params, random_seed=base_seed + e)
             self.ensemble.append(model)
         logging.info(f"Initialized {self.esize} models in the ensemble.")
 
