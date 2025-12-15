@@ -3,18 +3,17 @@ YAML configuration loader for ML experiments.
 
 This module provides utilities to load YAML configuration files
 and convert them into strongly-typed dataclass instances.
+
+Note: Config files are required. Default values for optional fields
+are defined in the dataclass definitions in experiment_config.py.
 """
 
 import yaml
 from pathlib import Path
-from typing import TypeVar, Type, Dict, Any, Optional, get_type_hints, get_origin, get_args
+from typing import TypeVar, Type, Dict, Any, get_type_hints, get_origin, get_args
 from dataclasses import fields, is_dataclass
 
 from src.config.experiment_config import (
-    PathConfig,
-    CatBoostParams,
-    CrossValidationConfig,
-    DataConfig,
     SiteClassificationConfig,
     PathologyClassificationConfig,
 )
@@ -106,84 +105,41 @@ def dict_to_dataclass(data: Dict[str, Any], cls: Type[T]) -> T:
     return cls(**processed_data)
 
 
-# Default configurations (matching current hardcoded values)
-
-DEFAULT_SITE_CLASSIFICATION_PATHS = PathConfig(
-    info_file='data/ELM19/filtered/ELM19_info_filtered_norm.csv',
-    features_file='data/ELM19/filtered/ELM19_features_filtered_norm.csv',
-    results_file='results/tables/05_experiment_filters/exp01_site_clf_results.csv',
-    pipeline_save_dir='models/05_experiment_filters/exp01_site_clf_pipelines',
-    shap_data_save_dir='results/shap_data/05_experiment_filters/exp01_site_clf',
-)
-
-DEFAULT_SITE_CATBOOST_PARAMS = CatBoostParams(
-    iterations=2000,
-    learning_rate=0.2136106733298358,
-    depth=5,
-    l2_leaf_reg=1.0050061307458207,
-    early_stopping_rounds=50,
-    task_type="GPU",
-    thread_count=20,
-)
-
-DEFAULT_PATHOLOGY_CLASSIFICATION_PATHS = PathConfig(
-    info_file='data/ELM19/filtered/ELM19_info_filtered.csv',
-    features_file='data/ELM19/filtered/ELM19_features_filtered.csv',
-    results_file='results/tables/05_experiment_filters/exp02_patho_clf_results.csv',
-    pipeline_save_dir='models/05_experiment_filters/exp02_patho_clf_pipelines',
-    shap_data_save_dir='results/shap_data/05_experiment_filters/exp02_patho_clf',
-)
-
-DEFAULT_PATHOLOGY_CATBOOST_PARAMS = CatBoostParams(
-    iterations=700,
-    learning_rate=0.08519504279364008,
-    depth=6,
-    l2_leaf_reg=1.1029971156522604,
-    colsample_bylevel=0.019946626267165004,
-    task_type="CPU",
-    thread_count=-1,
-    boosting_type='Plain',
-    bootstrap_type='MVS',
-)
-
-
-def load_site_classification_config(
-    config_path: Optional[str | Path] = None
-) -> SiteClassificationConfig:
+def load_site_classification_config(config_path: str | Path) -> SiteClassificationConfig:
     """Load site classification configuration from YAML.
 
     Args:
-        config_path: Path to YAML config file. If None, returns default config.
+        config_path: Path to YAML config file (required)
 
     Returns:
         SiteClassificationConfig instance
+
+    Raises:
+        ValueError: If config_path is None
+        FileNotFoundError: If the config file doesn't exist
     """
     if config_path is None:
-        return SiteClassificationConfig(
-            paths=DEFAULT_SITE_CLASSIFICATION_PATHS,
-            catboost_params=DEFAULT_SITE_CATBOOST_PARAMS,
-        )
+        raise ValueError("Config file is required. Use --config/-c to specify a YAML config file.")
 
     data = load_yaml(config_path)
     return dict_to_dataclass(data, SiteClassificationConfig)
 
 
-def load_pathology_classification_config(
-    config_path: Optional[str | Path] = None
-) -> PathologyClassificationConfig:
+def load_pathology_classification_config(config_path: str | Path) -> PathologyClassificationConfig:
     """Load pathology classification configuration from YAML.
 
     Args:
-        config_path: Path to YAML config file. If None, returns default config.
+        config_path: Path to YAML config file (required)
 
     Returns:
         PathologyClassificationConfig instance
+
+    Raises:
+        ValueError: If config_path is None
+        FileNotFoundError: If the config file doesn't exist
     """
     if config_path is None:
-        return PathologyClassificationConfig(
-            paths=DEFAULT_PATHOLOGY_CLASSIFICATION_PATHS,
-            catboost_params=DEFAULT_PATHOLOGY_CATBOOST_PARAMS,
-        )
+        raise ValueError("Config file is required. Use --config/-c to specify a YAML config file.")
 
     data = load_yaml(config_path)
     return dict_to_dataclass(data, PathologyClassificationConfig)

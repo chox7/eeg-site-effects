@@ -143,7 +143,7 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         'classification': 'pathology_label'
     })
 
-    y = info_df[config.data.site_column]
+    y = info_df['hospital_id']
     X = features_df
     all_hospitals = np.unique(y)
 
@@ -163,7 +163,7 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-        sites = info_df[config.data.site_column]
+        sites = info_df['hospital_id']
         cov = info_df[config.data.covariates]
         pipeline_steps = []
 
@@ -215,12 +215,13 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         if fold == 0 and config.paths.pipeline_save_dir and config.paths.shap_data_save_dir:
             logger.info("Saving pipeline and test data for Fold 0 (for SHAP analysis)...")
 
-            pipeline_filename = f"{harmonization_method}_pipeline_fold0.joblib"
+            tag_suffix = f"_{tag}" if tag else ""
+            pipeline_filename = f"{harmonization_method}{tag_suffix}_pipeline_fold0.joblib"
             pipeline_save_path = os.path.join(config.paths.pipeline_save_dir, pipeline_filename)
             joblib.dump(pipeline, pipeline_save_path)
             logger.info(f"Pipeline saved to: {pipeline_save_path}")
 
-            test_data_filename = f"{harmonization_method}_test_data_fold0.parquet"
+            test_data_filename = f"{harmonization_method}{tag_suffix}_test_data_fold0.parquet"
             test_data_save_path = os.path.join(config.paths.shap_data_save_dir, test_data_filename)
             X_test_to_save = X_test.copy()
             X_test_to_save['y_true_hospital'] = y_test

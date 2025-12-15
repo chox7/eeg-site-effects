@@ -152,10 +152,10 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
     )
 
     label_map = {'norm': 0, 'patho': 1, 'normal': 0, 'pathological': 1}
-    y = info_df[config.data.label_column].map(label_map)
+    y = info_df['pathology_label'].map(label_map)
 
     X = features_df
-    groups = info_df[config.data.site_column]
+    groups = info_df['hospital_id']
 
     # Get CatBoost parameters from config
     catboost_params = get_catboost_params(config)
@@ -213,26 +213,26 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
         harmonizer = None
         if harmonization_method == 'combat':
             harmonizer = ComBat(
-                batch=info_df[config.data.site_column],
+                batch=info_df['hospital_id'],
                 method='johnson'
             )
         elif harmonization_method == 'neurocombat':
             harmonizer = ComBat(
-                batch=info_df[config.data.site_column],
+                batch=info_df['hospital_id'],
                 discrete_covariates=info_df[['gender']],
                 continuous_covariates=info_df[['age']],
                 method='fortin'
             )
         elif harmonization_method == 'covbat':
             harmonizer = ComBat(
-                batch=info_df[config.data.site_column],
+                batch=info_df['hospital_id'],
                 discrete_covariates=info_df[['gender']],
                 continuous_covariates=info_df[['age']],
                 method='chen'
             )
         elif harmonization_method == 'sitewise':
             harmonizer = SiteWiseStandardScaler(
-                batch=info_df[config.data.site_column]
+                batch=info_df['hospital_id']
             )
 
         if harmonizer:
@@ -279,11 +279,12 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
             pipeline = Pipeline(steps=steps)
 
             # Save Pipeline
-            pipeline_filename = f"{harmonization_method}_{hospital_test}_pipeline.joblib"
+            tag_suffix = f"_{tag}" if tag else ""
+            pipeline_filename = f"{harmonization_method}_{hospital_test}{tag_suffix}_pipeline.joblib"
             joblib.dump(pipeline, os.path.join(config.paths.pipeline_save_dir, pipeline_filename))
 
             # Save Test Data (Untransformed X_test_full + Labels)
-            test_data_filename = f"{harmonization_method}_{hospital_test}_test_data.parquet"
+            test_data_filename = f"{harmonization_method}_{hospital_test}{tag_suffix}_test_data.parquet"
             X_test_save = X_test_full.copy()
             X_test_save['y_true'] = y_test_full
             X_test_save.to_parquet(os.path.join(config.paths.shap_data_save_dir, test_data_filename))

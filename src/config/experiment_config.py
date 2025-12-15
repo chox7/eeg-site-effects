@@ -111,13 +111,9 @@ class DataConfig:
     """Data-related configuration.
 
     Attributes:
-        covariates: List of covariate column names
-        site_column: Column name for site/hospital ID
-        label_column: Column name for pathology labels
+        covariates: List of covariate column names for harmonization (after rename)
     """
     covariates: List[str] = field(default_factory=lambda: ['age', 'gender'])
-    site_column: str = 'hospital_id'
-    label_column: str = 'pathology_label'
 
 
 @dataclass
