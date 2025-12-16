@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Generate info.csv files for each filter experiment by matching
-metrics.csv (which contains successful exam_ids) with the original info file.
+metrics.csv (successful files only) with the original info file.
 """
 
 import pandas as pd
@@ -39,11 +39,20 @@ def main():
             print(f"[SKIP] {config_name}: metrics.csv not found")
             continue
 
-        # Load metrics to get successful exam_ids
+        # Load metrics and filter for successful files only
         df_metrics = pd.read_csv(metrics_path)
+
+        # Filter by preprocessing_successful flag if it exists
+        if 'preprocessing_successful' in df_metrics.columns:
+            df_metrics = df_metrics[df_metrics['preprocessing_successful'] == True]
+
+        # Also filter by segments_kept > 0 if the column exists
+        if 'segmentation.segments_kept' in df_metrics.columns:
+            df_metrics = df_metrics[df_metrics['segmentation.segments_kept'] > 0]
+
         successful_exam_ids = df_metrics['examination_id'].unique()
 
-        # Filter info to only successful exams
+        # Filter info to only successful exams, preserving original order
         df_info_filtered = df_info[df_info['examination_id'].isin(successful_exam_ids)].reset_index(drop=True)
 
         # Verify count matches features
@@ -51,10 +60,12 @@ def main():
             n_features = len(pd.read_csv(features_path))
             if len(df_info_filtered) != n_features:
                 print(f"[WARN] {config_name}: info has {len(df_info_filtered)} rows but features has {n_features}")
+                print(f"       Failed exam_ids might be: check metrics for preprocessing_successful=False")
+            else:
+                print(f"[OK] {config_name}: {len(df_info_filtered)} records match features")
 
         # Save
         df_info_filtered.to_csv(info_path, index=False)
-        print(f"[OK] {config_name}: saved {len(df_info_filtered)} records to info.csv")
 
 if __name__ == "__main__":
     main()
