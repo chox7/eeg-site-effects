@@ -166,21 +166,29 @@ def run_filter_experiment(
         # Aggregate
         aggregator = MetricsAggregator()
         features_list = []
+        successful_indices = []
 
         for idx, features, metrics in results:
             if metrics is not None:
                 aggregator.add_metrics(metrics)
             if features is not None:
                 features_list.append(features)
+                successful_indices.append(idx)
 
         print(f"✓ Success: {len(features_list)}/{len(df_info)} files")
 
-        # SAVE FEATURES FOR ML
+        # SAVE FEATURES AND CORRESPONDING INFO FOR ML
         if len(features_list) > 0:
             df_feats = pd.DataFrame(features_list, columns=get_feat_names())
             features_path = config_dir / "features.csv"
             df_feats.to_csv(features_path, index=False)
             print(f"  → Features saved: {features_path}")
+
+            # Save corresponding info (only successful records)
+            df_info_subset = df_info.iloc[successful_indices].reset_index(drop=True)
+            info_path = config_dir / "info.csv"
+            df_info_subset.to_csv(info_path, index=False)
+            print(f"  → Info saved: {info_path}")
 
         # Save metrics
         metrics_df = metrics_to_dataframe(aggregator.metrics_list)

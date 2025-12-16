@@ -75,6 +75,13 @@ Examples:
     )
 
     parser.add_argument(
+        '--info', '-i',
+        type=str,
+        default=None,
+        help='Path to info CSV file (overrides config)'
+    )
+
+    parser.add_argument(
         '--tag', '-t',
         type=str,
         default=None,
@@ -253,10 +260,14 @@ def main():
     # Load configuration
     config = load_site_classification_config(args.config)
 
-    # Override features file if provided via CLI
+    # Override paths if provided via CLI
     if args.features:
         config.paths.features_file = args.features
         logger.info(f"Using features file from CLI: {args.features}")
+
+    if args.info:
+        config.paths.info_file = args.info
+        logger.info(f"Using info file from CLI: {args.info}")
 
     if config.experiment_name:
         logger.info(f"Running experiment: {config.experiment_name}")
