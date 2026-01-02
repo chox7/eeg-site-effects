@@ -47,8 +47,8 @@ def main():
             df_metrics = df_metrics[df_metrics['preprocessing_successful'] == True]
 
         # Also filter by segments_kept > 0 if the column exists
-        if 'segmentation.segments_kept' in df_metrics.columns:
-            df_metrics = df_metrics[df_metrics['segmentation.segments_kept'] > 0]
+        if 'segments_kept' in df_metrics.columns:
+            df_metrics = df_metrics[df_metrics['segments_kept'] > 0]
 
         successful_exam_ids = df_metrics['examination_id'].unique()
 

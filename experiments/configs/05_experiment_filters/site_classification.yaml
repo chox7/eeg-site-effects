@@ -5,7 +5,7 @@ experiment_name: "05_experiment_filters_site_clf"
 
 paths:
   info_file: "data/ELM19/filtered/ELM19_info_filtered_norm.csv"
-  features_file: "data/ELM19/filtered/ELM19_features_filtered_norm.csv"  # Override with --features/-f
+  features_file: ""  # Override with --features/-f
   results_file: "results/tables/05_experiment_filters/site_clf_results.csv"
   pipeline_save_dir: "models/05_experiment_filters/site_clf_pipelines"
   shap_data_save_dir: "results/shap_data/05_experiment_filters/site_clf"

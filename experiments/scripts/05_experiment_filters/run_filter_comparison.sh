@@ -44,7 +44,6 @@ for config in "${FILTER_CONFIGS[@]}"; do
     python experiments/ml/site_classification.py \
         -c "${CONFIG_BASE}/site_classification.yaml" \
         -m raw \
-        -i "${info_path}" \
         -f "${features_norm_path}" \
         -t "${tag}"
 
