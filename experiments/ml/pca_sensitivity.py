@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import json
 import logging
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
@@ -10,7 +11,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from catboost import CatBoostClassifier, metrics
 from combatlearn.combat import ComBat
 
-from src.models.gbe import GBE
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 
 # --- Constants ---
@@ -57,21 +57,26 @@ CATBOOST_PARAMS_SITE = {
     'allow_writing_files': False
 }
 
-CATBOOST_PARAMS_PATHO = {
-    'iterations': 700,
-    'learning_rate': 0.08519504279364008,
-    'depth': 6.0,
-    'l2_leaf_reg': 1.1029971156522604,
-    'colsample_bylevel': 0.019946626267165004,
-    'objective': 'Logloss',
-    'thread_count': -1,
-    'boosting_type': 'Plain',
-    'bootstrap_type': 'MVS',
-    'eval_metric': metrics.AUC(),
-    'allow_writing_files': False,
-}
+# Pathology params loaded from Optuna tuning (run tune_catboost_pca.py first)
+CATBOOST_PARAMS_PATHO_PATH = 'config/params/catboost_patho.json'
 
 logger = logging.getLogger(__name__)
+
+
+def load_catboost_params_patho():
+    """Load tuned CatBoost params from JSON file."""
+    with open(CATBOOST_PARAMS_PATHO_PATH, 'r') as f:
+        params = json.load(f)
+    # Remove metadata keys
+    params.pop('best_auc', None)
+    params.pop('n_trials', None)
+    # Add fixed params
+    params['objective'] = 'Logloss'
+    params['eval_metric'] = metrics.AUC()
+    params['allow_writing_files'] = False
+    params['verbose'] = False
+    params['random_seed'] = RANDOM_STATE
+    return params
 
 def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
     # 1. Robust Scaler
@@ -275,7 +280,8 @@ def run_pathology_classification(X, y, info_df, method, pca_var):
                 X_test_harm = harmonizer.transform(X_test_pca)
 
         # --- STEP 3: CLASSIFICATION ---
-        clf = GBE(esize=30, fun_model=CatBoostClassifier, **CATBOOST_PARAMS_PATHO)
+        catboost_params = load_catboost_params_patho()
+        clf = CatBoostClassifier(**catboost_params)
         clf.fit(X_train_harm, y_train_pool, verbose=False)
 
         y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
