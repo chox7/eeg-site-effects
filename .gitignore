@@ -3,7 +3,7 @@
 /data/
 /models/
 catboost_info/
-old/
+_archive/
 */shap_data/*
 
 # Big experiment outputs
