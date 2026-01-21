@@ -5,7 +5,13 @@
 catboost_info/
 old/
 */shap_data/*
-*/tables/*
+
+# Big experiment outputs
+results/tables/**/combat_vs_covbat/
+results/tables/tables_backup/
+results/tables/**/harmonization/combat/
+results/tables/**/harmonization/standard_scaler/
+results/tables/**/harmonization/unharmonized_pca/
 
 # Virtual Environments
 venv/
