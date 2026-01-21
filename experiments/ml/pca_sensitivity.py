@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import json
 import logging
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
@@ -10,7 +11,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from catboost import CatBoostClassifier, metrics
 from combatlearn.combat import ComBat
 
-from src.models.gbe import GBE
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 
 # --- Constants ---
@@ -20,10 +20,10 @@ FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 RESULTS_PATH_SITE = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_site_full.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_SITE), exist_ok=True)
 
-RESULTS_PATH_PATHO = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_patho_full.csv'
+RESULTS_PATH_PATHO = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_patho_full_single_catboost.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_PATHO), exist_ok=True)
 
-LOG_FILE_PATH = 'results/logs/04_pca_sensitivity/pca_sensitivity_log_full.log'
+LOG_FILE_PATH = 'results/logs/04_pca_sensitivity/pca_sensitivity_log_full_single_catboost.log'
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
 COVARIATES = ['age', 'gender']
@@ -34,10 +34,9 @@ RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
 
-#METHODS = ['neurocombat', 'covbat']
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
 # --- PCA Parameters ---
-PCA_VARIANTS = [None] #, 0.99, 0.95, 0.90, 0.80]
+PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
 
 # --- CatBoost Parameters ---
 CATBOOST_PARAMS_SITE = {
@@ -57,21 +56,29 @@ CATBOOST_PARAMS_SITE = {
     'allow_writing_files': False
 }
 
-CATBOOST_PARAMS_PATHO = {
-    'iterations': 700,
-    'learning_rate': 0.08519504279364008,
-    'depth': 6.0,
-    'l2_leaf_reg': 1.1029971156522604,
-    'colsample_bylevel': 0.019946626267165004,
-    'objective': 'Logloss',
-    'thread_count': -1,
-    'boosting_type': 'Plain',
-    'bootstrap_type': 'MVS',
-    'eval_metric': metrics.AUC(),
-    'allow_writing_files': False,
-}
+# Pathology params loaded from Optuna tuning (run tune_catboost_pca.py first)
+CATBOOST_PARAMS_PATHO_PATH = 'config/params/catboost_patho_best_time_auc_ratio.json'
 
 logger = logging.getLogger(__name__)
+
+
+def load_catboost_params_patho():
+    """Load tuned CatBoost params from JSON file."""
+    with open(CATBOOST_PARAMS_PATHO_PATH, 'r') as f:
+        params = json.load(f)
+    # Remove metadata keys
+    params.pop('best_auc', None)
+    params.pop('n_trials', None)
+    # Add fixed params
+    params['objective'] = 'Logloss'
+    params['eval_metric'] = metrics.AUC()
+    params['allow_writing_files'] = False
+    params['verbose'] = False
+    params['random_seed'] = RANDOM_STATE
+    params['task_type'] = 'GPU'
+    params['max_bin'] = 32
+    return params
+
 
 def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
     # 1. Robust Scaler
@@ -80,23 +87,25 @@ def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
     X_test_s = scaler.transform(X_test)
     X_calib_s = scaler.transform(X_calib) if X_calib is not None else None
 
-    # 2. PCA
-    #if pca_variance is not None:
-    pca = PCA(n_components=pca_variance, random_state=RANDOM_STATE)
-    X_train_p = pca.fit_transform(X_train_s)
-    X_test_p = pca.transform(X_test_s)
-    X_calib_p = pca.transform(X_calib_s) if X_calib_s is not None else None
-    n_comps = pca.n_components_
-    # else:
-    #     X_train_p = X_train_s
-    #     X_test_p = X_test_s
-    #     X_calib_p = X_calib_s
-    #     n_comps = X_train.shape[1]
+    # 2. PCA (or skip)
+    if pca_variance == 'none':
+        # No PCA - just return scaled data
+        X_train_p = X_train_s
+        X_test_p = X_test_s
+        X_calib_p = X_calib_s
+        n_comps = X_train.shape[1]
+    else:
+        # PCA: 'all' → None (all components), float → variance threshold
+        n_components = None if pca_variance == 'all' else pca_variance
+        pca = PCA(n_components=n_components, random_state=RANDOM_STATE)
+        X_train_p = pca.fit_transform(X_train_s)
+        X_test_p = pca.transform(X_test_s)
+        X_calib_p = pca.transform(X_calib_s) if X_calib_s is not None else None
+        n_comps = pca.n_components_
 
-    # --- RESTORE INDICES ---
+    # Restore indices
     X_train_p = pd.DataFrame(X_train_p, index=X_train.index)
     X_test_p = pd.DataFrame(X_test_p, index=X_test.index)
-
     if X_calib is not None:
         X_calib_p = pd.DataFrame(X_calib_p, index=X_calib.index)
     else:
@@ -275,7 +284,8 @@ def run_pathology_classification(X, y, info_df, method, pca_var):
                 X_test_harm = harmonizer.transform(X_test_pca)
 
         # --- STEP 3: CLASSIFICATION ---
-        clf = GBE(esize=30, fun_model=CatBoostClassifier, **CATBOOST_PARAMS_PATHO)
+        catboost_params = load_catboost_params_patho()
+        clf = CatBoostClassifier(**catboost_params)
         clf.fit(X_train_harm, y_train_pool, verbose=False)
 
         y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
