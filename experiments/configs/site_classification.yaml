@@ -1,14 +1,14 @@
-# Site Classification - 05_experiment_filters
+# Site Classification - 06_filter_robustness
 # Testing different harmonization methods on filtered+normalized data
 
-experiment_name: "05_experiment_filters_site_clf"
+experiment_name: "06_filter_robustness_site_clf"
 
 paths:
   info_file: "data/ELM19/filtered/ELM19_info_filtered_norm.csv"
   features_file: ""  # Override with --features/-f
-  results_file: "results/tables/05_experiment_filters/site_clf_results.csv"
-  pipeline_save_dir: "models/05_experiment_filters/site_clf_pipelines"
-  shap_data_save_dir: "results/shap_data/05_experiment_filters/site_clf"
+  results_file: "results/tables/06_filter_robustness/site_clf_results.csv"
+  pipeline_save_dir: "models/06_filter_robustness/site_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/06_filter_robustness/site_clf"
 
 harmonization_methods:
   - raw

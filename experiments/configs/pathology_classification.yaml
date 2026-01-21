@@ -1,14 +1,14 @@
-# Pathology Classification - 05_experiment_filters
+# Pathology Classification - 06_filter_robustness
 # LOSO CV with calibration strategy on filtered data
 
-experiment_name: "05_experiment_filters_patho_clf"
+experiment_name: "06_filter_robustness_patho_clf"
 
 paths:
   info_file: "data/ELM19/filtered/ELM19_info_filtered.csv"
   features_file: "data/ELM19/filtered/ELM19_features_filtered.csv"  # Override with --features/-f
-  results_file: "results/tables/05_experiment_filters/patho_clf_results.csv"
-  pipeline_save_dir: "models/05_experiment_filters/patho_clf_pipelines"
-  shap_data_save_dir: "results/shap_data/05_experiment_filters/patho_clf"
+  results_file: "results/tables/06_filter_robustness/patho_clf_results.csv"
+  pipeline_save_dir: "models/06_filter_robustness/patho_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/06_filter_robustness/patho_clf"
 
 harmonization_methods:
   - raw
