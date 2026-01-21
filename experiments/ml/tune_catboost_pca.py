@@ -1,11 +1,6 @@
 """
 Optuna hyperparameter tuning for CatBoost pathology classification.
 
-Finds optimal CatBoost parameters on raw features (no PCA).
-These parameters will be used in pca_sensitivity.py to compare raw vs PCA performance.
-
-Note: colsample_bylevel is excluded as it's incompatible with PCA components.
-
 Usage:
     python experiments/ml/tune_catboost_pca.py [--n_trials 100]
 """
@@ -25,13 +20,13 @@ from catboost import CatBoostClassifier
 # --- Constants ---
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
-RESULTS_DIR = 'results/tuning/04_pca_sensitivity'
+RESULTS_DIR = 'results/logs/04_pca_sensitivity/tuning'
 PARAMS_DIR = 'config/params'
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(PARAMS_DIR, exist_ok=True)
 
 RANDOM_STATE = 42
-N_CV_FOLDS = 5
+N_CV_FOLDS = 3
 
 logger = logging.getLogger(__name__)
 
@@ -48,23 +43,15 @@ def create_objective(X, y):
         params = {
             'iterations': trial.suggest_int('iterations', 300, 1500),
             'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
-            'depth': trial.suggest_int('depth', 4, 10),
+            'depth': trial.suggest_int('depth', 4, 8),
             'l2_leaf_reg': trial.suggest_float('l2_leaf_reg', 1e-2, 10.0, log=True),
-            'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 50),
-            'boosting_type': 'Plain',
-            'bootstrap_type': trial.suggest_categorical('bootstrap_type', ['Bayesian', 'MVS', 'Bernoulli']),
             'objective': 'Logloss',
+            'max_bin': 32,
             'random_seed': RANDOM_STATE,
             'verbose': False,
             'allow_writing_files': False,
-            'thread_count': -1,
+            'task_type': 'GPU',
         }
-
-        # Bootstrap-specific params
-        if params['bootstrap_type'] == 'Bayesian':
-            params['bagging_temperature'] = trial.suggest_float('bagging_temperature', 0.0, 10.0)
-        elif params['bootstrap_type'] == 'Bernoulli':
-            params['subsample'] = trial.suggest_float('subsample', 0.5, 1.0)
 
         # --- Cross-validation ---
         skf = StratifiedKFold(n_splits=N_CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
@@ -74,7 +61,6 @@ def create_objective(X, y):
             X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
 
-            # Scaling only (no PCA)
             scaler = RobustScaler()
             X_train_s = scaler.fit_transform(X_train)
             X_val_s = scaler.transform(X_val)
