@@ -17,13 +17,13 @@ from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 
-RESULTS_PATH_SITE = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_site_full.csv'
+RESULTS_PATH_SITE = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_site_full.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_SITE), exist_ok=True)
 
-RESULTS_PATH_PATHO = 'results/tables/04_pca_sensitivity/pca_sensitivity_results_patho_full_single_catboost.csv'
+RESULTS_PATH_PATHO = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_full_single_catboost.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_PATHO), exist_ok=True)
 
-LOG_FILE_PATH = 'results/logs/04_pca_sensitivity/pca_sensitivity_log_full_single_catboost.log'
+LOG_FILE_PATH = 'results/logs/05_pca_sensitivity/pca_sensitivity_log_full_single_catboost.log'
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
 COVARIATES = ['age', 'gender']
