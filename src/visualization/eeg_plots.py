@@ -6,30 +6,9 @@ import matplotlib.colors as colors
 import matplotlib.cm as cm
 import matplotlib.colorbar as colorbar
 
-# --- CONSTANTS ---
-# Standard 19-channel layout
-CHANNELS_19 = [
-    'Fp1', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8',
-    'T3', 'C3', 'Cz', 'C4', 'T4',
-    'T5', 'P3', 'Pz', 'P4', 'T6',
-    'O1', 'O2'
-]
+from src.utils.eeg_constants import CHANNELS_19, CHANNEL_POSITIONS_19, FREQ_BANDS_14
 
-# Standard 19-channel 2D positions
-CHANNEL_POS_19 = {
-    'Fp1': (-0.5, 1.0), 'Fp2': (0.5, 1.0),
-    'F7': (-1.0, 0.5), 'F3': (-0.5, 0.5), 'Fz': (0.0, 0.5), 'F4': (0.5, 0.5), 'F8': (1.0, 0.5),
-    'T3': (-1.2, 0.0), 'C3': (-0.5, 0.0), 'Cz': (0.0, 0.0), 'C4': (0.5, 0.0), 'T4': (1.2, 0.0),
-    'T5': (-1.0, -0.5), 'P3': (-0.5, -0.5), 'Pz': (0.0, -0.5), 'P4': (0.5, -0.5), 'T6': (1.0, -0.5),
-    'O1': (-0.5, -1.0), 'O2': (0.5, -1.0),
-}
-
-# Standard frequency bands
-FREQ_BANDS_14 = np.array([
-    [0.5, 2], [1, 3], [2, 4], [3, 6], [4, 8],
-    [6, 10], [8, 13], [10, 15], [13, 18], [15, 21],
-    [18, 24], [21, 27], [24, 30], [27, 40]
-])
+CHANNEL_POS_19 = CHANNEL_POSITIONS_19
 
 
 def extract_hospital_features(data_series: pd.Series, argument: str) -> pd.Series:
