@@ -6,14 +6,11 @@ Runs 5-fold stratified cross-validation for site/hospital classification
 using various harmonization methods.
 
 Usage:
-    # With config file (recommended)
+    # With config file
     python experiments/ml/site_classification.py --config experiments/configs/site_classification/default.yaml
 
     # With config file and specific method
     python experiments/ml/site_classification.py --config experiments/configs/site_classification/default.yaml --method combat
-
-    # Run all methods from config
-    python experiments/ml/site_classification.py -c experiments/configs/site_classification/default.yaml
 """
 
 import argparse
@@ -25,7 +22,6 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.pipeline import Pipeline
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
-from src.harmonization.relief import RELIEFHarmonizer
 from src.config import load_site_classification_config, SiteClassificationConfig
 
 import os

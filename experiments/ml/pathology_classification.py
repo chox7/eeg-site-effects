@@ -6,26 +6,21 @@ Runs Leave-One-Site-Out cross-validation for pathology classification
 with a calibration subset strategy.
 
 Usage:
-    # With config file (recommended)
+    # With config file
     python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml
 
     # With config file and specific method
     python experiments/ml/pathology_classification.py --config experiments/configs/pathology_classification/default.yaml --method combat
-
-    # Run all methods from config
-    python experiments/ml/pathology_classification.py -c experiments/configs/pathology_classification/default.yaml
 """
 
 import argparse
 import pandas as pd
-import numpy as np
 from catboost import CatBoostClassifier, metrics
 from sklearn.model_selection import LeaveOneGroupOut, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score
 from sklearn.pipeline import Pipeline
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
-from src.harmonization.relief import RELIEFHarmonizer
 from src.models.gbe import GBE
 from src.config import load_pathology_classification_config, PathologyClassificationConfig
 
