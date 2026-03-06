@@ -316,7 +316,7 @@ def main():
                 ))
 
         logger.info(f"Running {len(jobs)} {model_name} jobs with {N_PARALLEL} parallel workers...")
-        results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
+        results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
 
         # Collect and save after each model group
         site_results = []
