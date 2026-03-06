@@ -3,6 +3,7 @@ import os
 import sys
 import yaml
 import logging
+from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler, LabelEncoder
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut, train_test_split
@@ -40,9 +41,10 @@ LABEL_COLUMN = 'pathology_label'
 RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
+N_PARALLEL = 32
 
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
-MODELS = ['catboost', 'svm', 'logreg']
+MODELS = ['logreg', 'svm', 'catboost']
 # --- PCA Parameters ---
 PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
 
@@ -235,6 +237,19 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
     return detailed_results
 
 
+def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
+    """Run a single (task, method, pca_var, model) combination. Used by joblib."""
+    if task == 'site':
+        results = run_site_classification(
+            X, y, info_df, method, pca_var, catboost_params, model_name,
+        )
+    else:
+        results = run_pathology_classification(
+            X, y, info_df, method, pca_var, catboost_params, model_name,
+        )
+    return task, method, pca_var, model_name, results
+
+
 def main():
     logger.setLevel(logging.INFO)
 
@@ -260,11 +275,13 @@ def main():
         **cfg['catboost_params_site'],
         'loss_function': 'MultiClass', 'eval_metric': 'MCC',
         'verbose': False, 'allow_writing_files': False,
+        'task_type': 'CPU', 'thread_count': 1,
     }
     catboost_params_patho = {
         **cfg['catboost_params_patho'],
         'loss_function': 'Logloss', 'eval_metric': catboost_metrics.AUC(),
         'verbose': False, 'allow_writing_files': False,
+        'task_type': 'CPU', 'thread_count': 1,
     }
     logger.info(f"Loaded config from {CONFIG_PATH}")
 
@@ -283,47 +300,42 @@ def main():
     y_site_only = y_site[norm_mask].reset_index(drop=True)
     info_site_only = info[norm_mask].reset_index(drop=True)
 
-    for target_method in METHODS:
-        logger.info(f"==================================================")
-        logger.info(f"--- STARTING PCA SENSITIVITY ANALYSIS (Method: {target_method}) ---")
-        logger.info(f"==================================================")
+    for model_name in MODELS:
+        logger.info(f"=== Starting model group: {model_name} ===")
 
-        for pca_var in PCA_VARIANTS:
-            var_name = f"{pca_var}" if pca_var else "No PCA"
-            logger.info(f"\nProcessing PCA Variance: {var_name} ...")
+        jobs = []
+        for method in METHODS:
+            for pca_var in PCA_VARIANTS:
+                jobs.append(delayed(_run_job)(
+                    'site', X_site_only, y_site_only, info_site_only,
+                    method, pca_var, catboost_params_site, model_name,
+                ))
+                jobs.append(delayed(_run_job)(
+                    'patho', feats, y_patho, info,
+                    method, pca_var, catboost_params_patho, model_name,
+                ))
 
-            # --- 1. SITE CLASSIFICATION (all models) ---
-            for model_name in MODELS:
-                logger.info(f"--- STARTING EXPERIMENT: SITE CLASSIFICATION [{model_name}] ---")
-                site_results = run_site_classification(
-                    X_site_only, y_site_only, info_site_only, target_method, pca_var,
-                    catboost_params=catboost_params_site, model_name=model_name,
-                )
+        logger.info(f"Running {len(jobs)} {model_name} jobs with {N_PARALLEL} parallel workers...")
+        results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
 
-                df_results_site = pd.DataFrame(site_results)
-                append_results_csv(df_results_site, RESULTS_PATH_SITE)
+        # Collect and save after each model group
+        site_results = []
+        patho_results = []
+        for task, method, pca_var, _, result_list in results:
+            if task == 'site':
+                site_results.extend(result_list)
+            else:
+                patho_results.extend(result_list)
 
-                mean_overall_mcc = df_results_site['MCC_Overall'].mean()
-                logger.info(
-                    f"Results saved [{model_name}, {target_method}]. "
-                    f"Mean Overall MCC: {mean_overall_mcc:.4f}"
-                )
+        if site_results:
+            append_results_csv(pd.DataFrame(site_results), RESULTS_PATH_SITE)
+        if patho_results:
+            append_results_csv(pd.DataFrame(patho_results), RESULTS_PATH_PATHO_MULTIMODEL)
 
-            # --- 2. PATHOLOGY CLASSIFICATION (all models) ---
-            for model_name in MODELS:
-                logger.info(f"--- STARTING EXPERIMENT: PATHOLOGY CLASSIFICATION [{model_name}] ---")
-                patho_results = run_pathology_classification(
-                    feats, y_patho, info, target_method, pca_var,
-                    catboost_params=catboost_params_patho, model_name=model_name,
-                )
-                df_results_patho = pd.DataFrame(patho_results)
-                append_results_csv(df_results_patho, RESULTS_PATH_PATHO_MULTIMODEL)
-                mean_mcc = df_results_patho['mcc'].mean()
-                mean_auc = df_results_patho['auc'].mean()
-                logger.info(
-                    f"Results saved [{model_name}, {target_method}]. "
-                    f"Mean MCC: {mean_mcc:.4f}, Mean AUC: {mean_auc:.4f}"
-                )
+        logger.info(f"=== Finished model group: {model_name} — results saved ===")
+
+    logger.info("All experiments completed.")
+
 
 if __name__ == "__main__":
     main()
