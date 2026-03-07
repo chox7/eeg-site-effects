@@ -9,8 +9,6 @@ from sklearn.preprocessing import RobustScaler, LabelEncoder
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut, train_test_split
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
-from catboost import CatBoostClassifier, metrics as catboost_metrics
-
 from src.harmonization import make_harmonizer
 from src.utils.cv_metrics import get_scores_binary, get_scores_multiclass
 from src.utils.data_prep import load_experiment_data, prepare_pathology_labels, append_results_csv
@@ -44,7 +42,7 @@ K_CALIBRATION = 30  # For pathology classification
 N_PARALLEL = 26
 
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
-MODELS = ['logreg', 'svm', 'catboost']
+MODELS = ['logreg', 'svm']
 # --- PCA Parameters ---
 PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
 
@@ -270,21 +268,6 @@ def main():
 
     logger.info(f"Logger initialized. Saving logs to: {LOG_FILE_PATH}")
 
-    with open(CONFIG_PATH) as f:
-        cfg = yaml.safe_load(f)
-
-    catboost_params_site = {
-        **cfg['catboost_params_site'],
-        'loss_function': 'MultiClass', 'eval_metric': 'MCC',
-        'verbose': False, 'allow_writing_files': False,
-        'task_type': 'CPU', 'thread_count': 1,
-    }
-    catboost_params_patho = {
-        **cfg['catboost_params_patho'],
-        'loss_function': 'Logloss', 'eval_metric': catboost_metrics.AUC(),
-        'verbose': False, 'allow_writing_files': False,
-        'task_type': 'CPU', 'thread_count': 1,
-    }
     logger.info(f"Loaded config from {CONFIG_PATH}")
 
     try:
@@ -306,21 +289,16 @@ def main():
     for method in METHODS:
         for pca_var in PCA_VARIANTS:
             job_args.append(('site', X_site_only, y_site_only, info_site_only,
-                             method, pca_var, catboost_params_site))
+                             method, pca_var, None))
             job_args.append(('patho', feats, y_patho, info,
-                             method, pca_var, catboost_params_patho))
+                             method, pca_var, None))
 
     for model_name in MODELS:
         logger.info(f"=== Starting model group: {model_name} ===")
 
-        # SVM is single-threaded — parallelize jobs across cores
-        if model_name == 'svm':
-            logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
-            jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
-            results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
-        else:
-            logger.info(f"Running {len(job_args)} {model_name} jobs sequentially...")
-            results = [_run_job(*args, model_name) for args in job_args]
+        logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
+        jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
+        results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
 
         # Collect and save after each model group
         site_results = []
