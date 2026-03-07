@@ -41,10 +41,10 @@ N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
 N_PARALLEL = 12
 
-METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
+METHODS = ['raw', 'combat']
 MODELS = ['logreg', 'svm']
 # --- PCA Parameters ---
-PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
+PCA_VARIANTS = ['none', 'all']
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def run_site_classification(X, y, info_df, method, pca_var, catboost_params, mod
             clf = SVC(kernel='rbf', probability=True, C=1.0, random_state=RANDOM_STATE)
             clf.fit(X_train_harm, y_train)
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=5000, solver='saga', random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train)
         else:
             raise ValueError(f"Unknown model: {model_name}")
@@ -214,7 +214,7 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=5000, solver='saga', random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         else:
@@ -296,9 +296,13 @@ def main():
     for model_name in MODELS:
         logger.info(f"=== Starting model group: {model_name} ===")
 
-        logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
-        jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
-        results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
+        if model_name == 'svm':
+            logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
+            jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
+            results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
+        else:
+            logger.info(f"Running {len(job_args)} {model_name} jobs sequentially...")
+            results = [_run_job(*args, model_name) for args in job_args]
 
         # Collect and save after each model group
         site_results = []
