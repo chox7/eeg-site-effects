@@ -41,7 +41,7 @@ LABEL_COLUMN = 'pathology_label'
 RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
-N_PARALLEL = 32
+N_PARALLEL = 26
 
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
 MODELS = ['logreg', 'svm', 'catboost']
@@ -125,7 +125,7 @@ def run_site_classification(X, y, info_df, method, pca_var, catboost_params, mod
             clf = SVC(kernel='rbf', probability=True, C=1.0, random_state=RANDOM_STATE)
             clf.fit(X_train_harm, y_train)
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=5000, random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train)
         else:
             raise ValueError(f"Unknown model: {model_name}")
@@ -216,7 +216,7 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=5000, random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         else:
@@ -300,23 +300,25 @@ def main():
     y_site_only = y_site[norm_mask].reset_index(drop=True)
     info_site_only = info[norm_mask].reset_index(drop=True)
 
+    job_args = []
+    for method in METHODS:
+        for pca_var in PCA_VARIANTS:
+            job_args.append(('site', X_site_only, y_site_only, info_site_only,
+                             method, pca_var, catboost_params_site))
+            job_args.append(('patho', feats, y_patho, info,
+                             method, pca_var, catboost_params_patho))
+
     for model_name in MODELS:
         logger.info(f"=== Starting model group: {model_name} ===")
 
-        jobs = []
-        for method in METHODS:
-            for pca_var in PCA_VARIANTS:
-                jobs.append(delayed(_run_job)(
-                    'site', X_site_only, y_site_only, info_site_only,
-                    method, pca_var, catboost_params_site, model_name,
-                ))
-                jobs.append(delayed(_run_job)(
-                    'patho', feats, y_patho, info,
-                    method, pca_var, catboost_params_patho, model_name,
-                ))
-
-        logger.info(f"Running {len(jobs)} {model_name} jobs with {N_PARALLEL} parallel workers...")
-        results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
+        # SVM is single-threaded — parallelize jobs across cores
+        if model_name == 'svm':
+            logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
+            jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
+            results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
+        else:
+            logger.info(f"Running {len(job_args)} {model_name} jobs sequentially...")
+            results = [_run_job(*args, model_name) for args in job_args]
 
         # Collect and save after each model group
         site_results = []
