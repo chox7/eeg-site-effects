@@ -39,7 +39,7 @@ LABEL_COLUMN = 'pathology_label'
 RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
-N_PARALLEL = 26
+N_PARALLEL = 12
 
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
 MODELS = ['logreg', 'svm']
@@ -298,7 +298,7 @@ def main():
 
         logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
         jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
-        results = Parallel(n_jobs=N_PARALLEL, verbose=10, prefer='threads')(jobs)
+        results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
 
         # Collect and save after each model group
         site_results = []
