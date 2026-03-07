@@ -239,7 +239,7 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
 
 def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
     """Run a single (task, method, pca_var, model) combination. Used by joblib."""
-    print(f"[STARTING] {model_name} | {task} | {method} | pca={pca_var}", flush=True)
+    logger.info(f"[STARTING] {model_name} | {task} | {method} | pca={pca_var}")
     if task == 'site':
         results = run_site_classification(
             X, y, info_df, method, pca_var, catboost_params, model_name,
@@ -248,7 +248,7 @@ def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
         results = run_pathology_classification(
             X, y, info_df, method, pca_var, catboost_params, model_name,
         )
-    print(f"[DONE] {model_name} | {task} | {method} | pca={pca_var}", flush=True)
+    logger.info(f"[DONE] {model_name} | {task} | {method} | pca={pca_var}")
     return task, method, pca_var, model_name, results
 
 
