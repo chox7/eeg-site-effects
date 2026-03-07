@@ -125,7 +125,7 @@ def run_site_classification(X, y, info_df, method, pca_var, catboost_params, mod
             clf = SVC(kernel='rbf', probability=True, C=1.0, random_state=RANDOM_STATE)
             clf.fit(X_train_harm, y_train)
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=5000, random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=5000, solver='saga', random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train)
         else:
             raise ValueError(f"Unknown model: {model_name}")
@@ -216,7 +216,7 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         elif model_name == 'logreg':
-            clf = LogisticRegression(max_iter=5000, random_state=RANDOM_STATE, C=1.0)
+            clf = LogisticRegression(max_iter=5000, solver='saga', random_state=RANDOM_STATE, C=1.0)
             clf.fit(X_train_harm, y_train_pool)
             y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         else:
@@ -239,6 +239,7 @@ def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params
 
 def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
     """Run a single (task, method, pca_var, model) combination. Used by joblib."""
+    print(f"[STARTING] {model_name} | {task} | {method} | pca={pca_var}", flush=True)
     if task == 'site':
         results = run_site_classification(
             X, y, info_df, method, pca_var, catboost_params, model_name,
@@ -247,6 +248,7 @@ def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
         results = run_pathology_classification(
             X, y, info_df, method, pca_var, catboost_params, model_name,
         )
+    print(f"[DONE] {model_name} | {task} | {method} | pca={pca_var}", flush=True)
     return task, method, pca_var, model_name, results
 
 
