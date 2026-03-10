@@ -8,9 +8,11 @@ catboost_params_site:
   depth: 5
   l2_leaf_reg: 1.0050061307458207
   early_stopping_rounds: 50
+  task_type: "GPU"
 
 catboost_params_patho:
   iterations: 1500
   learning_rate: 0.07
   depth: 5
   l2_leaf_reg: 9
+  task_type: "GPU"

@@ -19,17 +19,13 @@ CONFIG_PATH = 'experiments/configs/pca_sensitivity.yaml'
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 
-RESULTS_PATH_SITE = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_site_full.csv'
+RESULTS_PATH_SITE = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_site_.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_SITE), exist_ok=True)
 
-RESULTS_PATH_PATHO = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_full_single_catboost.csv'
+RESULTS_PATH_PATHO = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_PATHO), exist_ok=True)
 
-RESULTS_PATH_PATHO_MULTIMODEL = (
-    'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_multimodel.csv'
-)
-
-LOG_FILE_PATH = 'results/logs/05_pca_sensitivity/pca_sensitivity_log_full_single_catboost.log'
+LOG_FILE_PATH = 'results/logs/05_pca_sensitivity/pca_sensitivity_log_.log'
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
 COVARIATES = ['age', 'gender']
@@ -41,10 +37,10 @@ N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
 N_PARALLEL = 12
 
-METHODS = ['raw', 'combat']
-MODELS = ['logreg', 'svm']
+METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
+MODELS = ['catboost', 'logreg']
 # --- PCA Parameters ---
-PCA_VARIANTS = ['none', 'all']
+PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
 
 logger = logging.getLogger(__name__)
 
@@ -316,7 +312,7 @@ def main():
         if site_results:
             append_results_csv(pd.DataFrame(site_results), RESULTS_PATH_SITE)
         if patho_results:
-            append_results_csv(pd.DataFrame(patho_results), RESULTS_PATH_PATHO_MULTIMODEL)
+            append_results_csv(pd.DataFrame(patho_results), RESULTS_PATH_PATHO)
 
         logger.info(f"=== Finished model group: {model_name} — results saved ===")
 
