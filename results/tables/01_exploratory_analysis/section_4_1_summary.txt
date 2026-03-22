@@ -9,14 +9,14 @@ DATASET OVERVIEW
   Pathological recordings: 28,211
   Norm fraction: 48.5%
 
-DEMOGRAPHICS
-  Age range (ELM_s): 16.0 – 70.0 years
-  Median age overall: 39.3 years
-  Sex: 28,960 female, 25,819 male
+DEMOGRAPHICS (ELM_n)
+  Age range: 16.0 – 70.0 years
+  Median age overall: 39.2 years
+  Sex: 13,746 female, 12,822 male
 
-RECORDING DURATION
-  Median duration: 1170 s
-  Range: 306 – 10849 s
+RECORDING DURATION (ELM_n)
+  Median duration: 1152 s
+  Range: 336 – 8322 s
 
 ACQUISITION HARDWARE
   Hardware 1032: 17 institutions
@@ -27,14 +27,14 @@ ACQUISITION HARDWARE
 ACQUISITION SOFTWARE
   Institutions with known software: 20 / 30
 
-SAMPLING FREQUENCY
+SAMPLING FREQUENCY (ELM_n)
   Dominant sfreq: 250.0 Hz
-  Recordings ≥600 Hz: 91
+  Recordings ≥600 Hz: 10
 
 SPECIALIST / CHILDREN HOSPITALS
   Specialist hospitals: 4
   Children hospitals  : 0
 
-ACQUISITION FILTERS
-  Recordings with highpass=0 Hz : 45,289
-  Recordings with highpass=0.16 Hz: 9,028
+ACQUISITION FILTERS (ELM_n)
+  Recordings with highpass=0 Hz : 20,843
+  Recordings with highpass=0.16 Hz: 5,466
