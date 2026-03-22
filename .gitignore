@@ -6,12 +6,10 @@ catboost_info/
 _archive/
 */shap_data/*
 
-# Big experiment outputs
-results/tables/**/combat_vs_covbat/
-results/tables/tables_backup/
-results/tables/**/harmonization/combat/
-results/tables/**/harmonization/standard_scaler/
-results/tables/**/harmonization/unharmonized_pca/
+# Results tables — add cleaned sections one by one as they are reviewed
+# (use /* not / so negation exceptions can un-ignore specific subdirs)
+results/tables/*
+!results/tables/01_exploratory_analysis/
 
 # Virtual Environments
 venv/

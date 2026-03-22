@@ -401,6 +401,85 @@ normal, hereafter referred to as $\mathrm{ELM}_n$.
 The full $\mathrm{ELM}_s$ dataset was used only in the downstream
 neuroscreening experiment.
 
+\subsubsection{Acquisition Metadata}
+\label{subsubsec:acquisition_metadata}
+
+All 30 institutions used EEG hardware and software manufactured by
+Elmiko Biosignals sp.~z~o.o.
+Of the 21 institutions for which hardware metadata were available,
+17 used one amplifier model and 4 used a different model;
+the remaining 9 institutions lacked hardware documentation
+(Table~\ref{tab:acquisition_metadata}).
+Software versions spanned a wide range, from early releases (v6.x)
+through intermediate versions (v8.x, v10.x, v12.x) to recent builds
+(v14.x, v15.x); several institutions changed software versions during
+the data-collection period.
+Sampling frequencies, as reported in EDF file headers, were
+predominantly ${\sim}250$\,Hz, though minor variations existed
+(e.g.\ 256\,Hz at two sites and 300\,Hz at one site).
+Acquisition-level filter settings recorded in the EDF headers also
+differed across sites: 82.7\% of all recordings reported a 0\,Hz
+high-pass setting (DC-coupled acquisition), while 16.5\% reported a
+0.16\,Hz cutoff.
+Low-pass acquisition filters similarly varied, with the majority of
+institutions reporting 125\,Hz and a subset reporting lower values
+(47--104\,Hz).
+We note that EDF header metadata are written by the recording software
+and may not always reflect the true analog hardware configuration;
+the values reported here should therefore be interpreted as nominal
+acquisition settings.
+Four of the 30 institutions are specialist hospitals.
+These metadata provide concrete evidence that the site effect has
+identifiable technical origins beyond purely demographic or clinical
+differences.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Acquisition metadata for the 30 institutions in
+    $\mathrm{ELM}_s$. Hardware model (A or B), software version, and
+    hospital type are shown where available; dashes indicate
+    missing documentation.}
+  \label{tab:acquisition_metadata}
+  \small
+  \begin{tabular}{lcll}
+    \toprule
+    \textbf{ID} & \textbf{HW} &
+    \textbf{Software} & \textbf{Specialist} \\
+    \midrule
+    H1  & ---  & ---            & --- \\
+    H2  & B    & 12.2 / 14.1   & No  \\
+    H3  & ---  & ---            & --- \\
+    H4  & B    & 14.1.0.1      & No  \\
+    H5  & ---  & ---            & --- \\
+    H6  & ---  & ---            & --- \\
+    H7  & B    & 10.3.8.1      & Yes \\
+    H8  & A    & 10.3.8.1      & No  \\
+    H9  & B    & 12             & No  \\
+    H10 & A    & 6              & No  \\
+    H11 & A    & 6.82           & No  \\
+    H12 & ---  & ---            & --- \\
+    H13 & A    & 10.3 / 15.0   & No  \\
+    H14 & ---  & ---            & --- \\
+    H15 & A    & 6.90.2.0       & --- \\
+    H16 & ---  & ---            & --- \\
+    H17 & A    & 6.90.3.1       & No  \\
+    H18 & A    & 8.0.7.8        & Yes \\
+    H19 & A    & 6.90.3.1       & No  \\
+    H20 & A    & 10.3.1.3       & No  \\
+    H21 & ---  & ---            & --- \\
+    H22 & A    & 6.90.3.1       & No  \\
+    H23 & A    & 6.90.0.8       & Yes \\
+    H24 & A    & ---            & No  \\
+    H25 & A    & ---            & Yes \\
+    H26 & A    & 6.90 / 10.3 / 14.0 & No  \\
+    H27 & A    & 6.82           & No  \\
+    H28 & A    & 6.61           & No  \\
+    H29 & ---  & ---            & --- \\
+    H30 & A    & 10.3.8.1       & No  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{EEG Preprocessing}
 \label{subsec:preprocessing}
 
@@ -914,17 +993,53 @@ Exploratory analysis of the $\mathrm{ELM}_n$ subset revealed
 substantial heterogeneity across the 30 institutions in patient
 demographics and recording protocols.
 Age distributions varied markedly between sites: institutions such as
-PIO, SL2, and TER\_L served predominantly young populations (median
-ages 17.6, 19.5, and 17.8 years, respectively), while institutions
-such as MOR and TOR served predominantly older patients (median ages
-52.1 and 50.8 years, respectively).
+H21, H29, and H30 served predominantly young populations (median
+ages 19.5, 17.8, and 17.6 years, respectively), while institutions
+such as H7 and H19 served predominantly older patients (median ages
+50.8 and 52.1 years, respectively).
 The maximum difference in median age between any two institutions
 exceeded 30 years (full statistics are given in
 Table~\ref{tab:age_stats} in the Appendix).
-Recording duration showed further heterogeneity: institution
-KATMOJPRZ recorded sessions lasting up to 8\,322 seconds, and ZOZLO
-showed a bimodal distribution suggesting the use of multiple recording
-protocols within a single institution.
+Sex distributions were broadly balanced across most institutions,
+with minor imbalances at a small number of sites.
+Recording duration showed further heterogeneity: while the majority
+of centres produced sessions of approximately 1\,170 seconds (median),
+institution H3 showed a bimodal distribution suggesting the use of
+multiple recording protocols within a single institution, and H16
+recorded sessions lasting up to 8\,322 seconds.
+Raw signal amplitudes, quantified as the median of per-channel
+median absolute deviations (MAD) across the full recording,
+varied by more than two orders of magnitude across institutions
+(median MAD range: 3.9--1\,611\,$\mu$V;
+Figure~\ref{fig:raw_amplitude}), likely reflecting differences in
+amplifier gain settings across hardware configurations.
+Frame rejection rates during preprocessing were generally low
+(overall mean 1.9\%, median 0.3\%), with most institutions below
+3\%; institution H22 was a notable outlier at 8.2\%, driven
+primarily by flat-line electrode rejections.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{Figs/raw_amplitude_by_hospital.png}
+  \caption{Raw signal amplitude (median of per-channel MAD, $\mu$V)
+    by institution for normal recordings in $\mathrm{ELM}_n$.
+    The $y$-axis is log-scaled. The two-order-of-magnitude range
+    reflects differences in amplifier gain settings across sites.}
+  \label{fig:raw_amplitude}
+\end{figure}
+
+Institution sample sizes in $\mathrm{ELM}_n$ ranged from 86 (H23)
+to 6\,222 (H10), a 72-fold imbalance.  The proportion of normal
+recordings in $\mathrm{ELM}_s$ also varied widely across
+institutions, from 7.6\% (H30) to 78.3\% (H7), further motivating
+the restriction to normal recordings ($\mathrm{ELM}_n$) for
+site-effect analyses.
+
+This demographic, procedural, and hardware heterogeneity motivates
+the use of $\mathrm{ELM}_n$ for all site-effect analyses and
+provides a qualitative indication that observed inter-site feature
+differences reflect a mixture of acquisition and population-level
+sources.
 
 \subsection{Quantifying the Site Effect}
 \label{subsec:site_classification}
@@ -946,39 +1061,39 @@ Per-institution one-vs-rest MCC scores for the CatBoost classifier
 are summarised in Table~\ref{tab:per_site_mcc}.
 A total of 23 out of 30 institutions achieved average MCC scores
 above 0.7.
-A small subset of institutions---AKS, CHE, KIEG, and
-SL2---performed poorly (MCC 0.39--0.52), likely owing to
+A small subset of institutions---H12, H13, H21, and
+H23---performed poorly (MCC 0.39--0.52), likely owing to
 distributional similarity with neighbouring sites in the corpus.
-Institution CMD achieved the lowest average MCC of 0.21.
+Institution H5 achieved the lowest average MCC of 0.21.
 
 \begin{table}[htbp]
   \centering
   \caption{Per-institution one-vs-rest MCC (mean $\pm$ SD, 5-fold CV
     on $\mathrm{ELM}_n$, unharmonised CatBoost classifier).
-    Institutions are ordered by decreasing MCC, reading the left
-    column top-to-bottom then the right column top-to-bottom.}
+    Institutions are ordered by anonymised identifier.}
   \label{tab:per_site_mcc}
   \begin{tabular}{lc@{\quad}lc}
     \toprule
     \textbf{Institution} & \textbf{MCC} &
     \textbf{Institution} & \textbf{MCC} \\
     \midrule
-    MOR       & $0.954 \pm 0.035$ & PRZ      & $0.844 \pm 0.016$ \\
-    B2K       & $0.952 \pm 0.006$ & KLU      & $0.828 \pm 0.015$ \\
-    TOR       & $0.938 \pm 0.015$ & WLU      & $0.805 \pm 0.015$ \\
-    KAL       & $0.941 \pm 0.030$ & MKW      & $0.809 \pm 0.034$ \\
-    LUMICE    & $0.947 \pm 0.034$ & SRK      & $0.780 \pm 0.036$ \\
-    KUD       & $0.933 \pm 0.017$ & OST      & $0.781 \pm 0.016$ \\
-    KATMOJPRZ & $0.918 \pm 0.012$ & ZOZLO    & $0.782 \pm 0.048$ \\
-    STG1      & $0.922 \pm 0.010$ & OTW      & $0.830 \pm 0.010$ \\
-    Z04O      & $0.915 \pm 0.012$ & GAK      & $0.748 \pm 0.014$ \\
-    SZC       & $0.893 \pm 0.005$ & TER\_L   & $0.682 \pm 0.025$ \\
-    SLU       & $0.890 \pm 0.026$ & PIO      & $0.626 \pm 0.098$ \\
-    PUS       & $0.899 \pm 0.048$ & AKS      & $0.517 \pm 0.117$ \\
-    ARCHDAM   & $0.872 \pm 0.014$ & SL2      & $0.467 \pm 0.112$ \\
-    LUX\_A    & $0.851 \pm 0.016$ & CHE      & $0.407 \pm 0.113$ \\
-    overall   & $0.865 \pm 0.003$ & KIEG     & $0.390 \pm 0.079$ \\
-              &                   & CMD      & $0.207 \pm 0.047$ \\
+    H1  & $0.947 \pm 0.034$ & H16 & $0.918 \pm 0.012$ \\
+    H2  & $0.781 \pm 0.016$ & H17 & $0.844 \pm 0.016$ \\
+    H3  & $0.782 \pm 0.048$ & H18 & $0.890 \pm 0.026$ \\
+    H4  & $0.809 \pm 0.034$ & H19 & $0.954 \pm 0.035$ \\
+    H5  & $0.207 \pm 0.047$ & H20 & $0.933 \pm 0.017$ \\
+    H6  & $0.851 \pm 0.016$ & H21 & $0.467 \pm 0.112$ \\
+    H7  & $0.938 \pm 0.015$ & H22 & $0.915 \pm 0.012$ \\
+    H8  & $0.830 \pm 0.010$ & H23 & $0.407 \pm 0.113$ \\
+    H9  & $0.780 \pm 0.036$ & H24 & $0.805 \pm 0.015$ \\
+    H10 & $0.893 \pm 0.005$ & H25 & $0.922 \pm 0.010$ \\
+    H11 & $0.899 \pm 0.048$ & H26 & $0.828 \pm 0.015$ \\
+    H12 & $0.517 \pm 0.117$ & H27 & $0.748 \pm 0.014$ \\
+    H13 & $0.390 \pm 0.079$ & H28 & $0.941 \pm 0.030$ \\
+    H14 & $0.952 \pm 0.006$ & H29 & $0.682 \pm 0.025$ \\
+    H15 & $0.872 \pm 0.014$ & H30 & $0.626 \pm 0.098$ \\
+    \midrule
+    \multicolumn{2}{l}{overall} & \multicolumn{2}{l}{$0.865 \pm 0.003$} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1336,14 +1451,14 @@ The site-classification experiment confirmed that the site effect is
 both strong and broadly distributed across the 2\,850-dimensional
 feature space of $\mathrm{ELM}_n$, with the CatBoost nonlinear
 classifier achieving an overall MCC of $0.865 \pm 0.003$.
-The range of per-site MCC values---from 0.954 (MOR) to 0.207
-(CMD)---reflects the heterogeneity of the corpus: institutions with
-distinctive demographic profiles (e.g.\ MOR and TOR, which serve
+The range of per-site MCC values---from 0.954 (H19) to 0.207
+(H5)---reflects the heterogeneity of the corpus: institutions with
+distinctive demographic profiles (e.g.\ H7 and H19, which serve
 predominantly older patients) or unusual recording protocols
-(e.g.\ KATMOJPRZ, with sessions up to 8\,322 seconds) are most
+(e.g.\ H16, with sessions up to 8\,322 seconds) are most
 reliably identified.
-Institutions at the lower end of the MCC range (CMD, KIEG, CHE,
-SL2) are likely to have feature distributions that overlap
+Institutions at the lower end of the MCC range (H5, H13, H21,
+H23) are likely to have feature distributions that overlap
 substantially with those of neighbouring sites, either because of
 similar patient demographics or because their recording protocols
 are less distinctive.
@@ -1581,25 +1696,45 @@ upon reasonable request to
 
 \begin{table}[htbp]
   \centering
-  \caption{Summary statistics of patient age (years) by institution
-    for the $\mathrm{ELM}_n$ normal recording subset
-    (representative selection).}
+  \caption{Summary statistics of patient age (years) and number of
+    normal recordings ($n$) by institution for the $\mathrm{ELM}_n$
+    subset. Institutions are ordered by anonymised identifier.}
   \label{tab:age_stats}
-  \begin{tabular}{lrrrrr}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    \textbf{Institution} & \textbf{Mean} & \textbf{Median} &
+    \textbf{ID} & \textbf{$n$} & \textbf{Mean} & \textbf{Median} &
     \textbf{SD} & \textbf{Min} & \textbf{Max} \\
     \midrule
-    PIO    & 20.3 & 17.6 & 8.3  & 16.0 & 68.3 \\
-    SL2    & 28.4 & 19.5 & 15.1 & 16.0 & 66.3 \\
-    TER\_L & 26.3 & 17.8 & 15.0 & 16.0 & 69.8 \\
-    MKW    & 26.1 & 21.7 & 10.8 & 16.0 & 69.7 \\
-    GAK    & 41.3 & 40.9 & 13.8 & 16.0 & 70.0 \\
-    KAL    & 46.2 & 48.2 & 15.6 & 17.3 & 69.9 \\
-    OST    & 48.1 & 49.2 & 13.7 & 18.4 & 69.9 \\
-    MOR    & 48.6 & 52.1 & 15.4 & 18.7 & 69.4 \\
-    TOR    & 47.6 & 50.8 & 16.5 & 16.0 & 69.9 \\
-    \multicolumn{6}{c}{$\cdots$} \\
+    H1  &   318 & 46.1 & 45.9 & 15.4 & 18.0 & 70.0 \\
+    H2  &   691 & 48.1 & 49.2 & 13.7 & 18.4 & 69.9 \\
+    H3  &   473 & 46.3 & 47.9 & 14.7 & 18.0 & 70.0 \\
+    H4  &   237 & 26.1 & 21.7 & 10.8 & 16.0 & 69.7 \\
+    H5  &   315 & 37.6 & 36.1 & 13.3 & 16.0 & 70.0 \\
+    H6  & 1\,148 & 39.0 & 36.9 & 12.6 & 16.1 & 69.7 \\
+    H7  &   752 & 47.6 & 50.8 & 16.5 & 16.0 & 69.9 \\
+    H8  & 1\,033 & 43.5 & 43.6 & 16.0 & 16.0 & 70.0 \\
+    H9  &   336 & 35.0 & 32.3 & 13.4 & 16.0 & 69.1 \\
+    H10 & 6\,222 & 37.7 & 35.8 & 15.4 & 16.0 & 70.0 \\
+    H11 &   166 & 45.6 & 46.6 & 15.6 & 18.0 & 70.0 \\
+    H12 &   232 & 29.4 & 22.4 & 14.7 & 16.0 & 69.9 \\
+    H13 &   110 & 44.7 & 44.1 & 16.6 & 18.2 & 69.9 \\
+    H14 & 2\,445 & 41.5 & 41.3 & 15.5 & 16.0 & 69.9 \\
+    H15 & 2\,289 & 34.9 & 33.3 & 12.5 & 16.0 & 69.8 \\
+    H16 & 2\,553 & 45.6 & 46.5 & 14.8 & 16.0 & 70.0 \\
+    H17 &   889 & 44.2 & 45.4 & 14.5 & 16.3 & 70.0 \\
+    H18 &   488 & 42.8 & 43.0 & 16.6 & 16.1 & 69.9 \\
+    H19 &   101 & 48.6 & 52.1 & 15.4 & 18.7 & 69.4 \\
+    H20 &   363 & 43.5 & 43.9 & 14.2 & 16.3 & 70.0 \\
+    H21 &    90 & 28.4 & 19.5 & 15.1 & 16.0 & 66.3 \\
+    H22 & 1\,271 & 45.5 & 46.0 & 15.1 & 16.0 & 70.0 \\
+    H23 &    86 & 44.2 & 46.5 & 15.5 & 16.4 & 69.8 \\
+    H24 &   783 & 42.3 & 43.3 & 15.4 & 16.0 & 70.0 \\
+    H25 &   983 & 38.2 & 37.3 & 15.0 & 16.1 & 70.0 \\
+    H26 &   704 & 41.0 & 41.0 & 16.0 & 16.0 & 70.0 \\
+    H27 &   307 & 41.3 & 40.9 & 13.8 & 16.0 & 70.0 \\
+    H28 &   410 & 46.2 & 48.2 & 15.6 & 17.3 & 69.9 \\
+    H29 &   677 & 26.3 & 17.8 & 15.0 & 16.0 & 69.8 \\
+    H30 &    96 & 20.3 & 17.6 &  8.3 & 16.0 & 68.3 \\
     \bottomrule
   \end{tabular}
 \end{table}
