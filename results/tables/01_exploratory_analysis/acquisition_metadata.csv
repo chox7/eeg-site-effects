@@ -1,0 +1,76 @@
+institution_id,hardware,software,specialist_hospital,children_hospital,specialization
+H10,1032,6,False,False,
+H23,1032,6.90.0.8,True,False,"- Chirurgia ogólna i ortopedia
+- Kardiologia i pulmonologia
+- Neurologia i neurochirurgia
+- Położnictwo i ginekologia
+- Anestezjologia i intensywna terapia
+- Dermatologia i alergologia
+- Psychiatria i psychologia kliniczna
+- Choroby zakaźne i obserwacyjne
+- Rehabilitacja i opieka długoterminowa"
+H21,,,,,
+H11,1032,6.82,False,False,
+H5,,,,,
+H19,1032,6.90.3.1,False,False,
+H9,1042,12,False,False,
+H25,1032,nie mam informacji,True,False,Psychiatria
+H29,,,,,
+H15,1032,6.90.2.0,,,
+H6,,,,,
+H7,1042,10.3.8.1,True,False,"- Chirurgia ogólna  
+- Kardiologia  
+- Pediatria  
+- Anestezjologia  
+- Ginekologia  
+- Neurochirurgia  
+- Ortopedia i traumatologia  
+- Okulistyka  
+- Diabetologia  
+- Laryngologia (otolaryngologia)  
+- Onkologia  
+- Pulmonologia  
+- Neurologia  
+- Medycyna rodzinna  
+- Stomatologia  
+- Alergologia  
+- Rehabilitacja medyczna  
+- Reumatologia  
+- Gastroenterologia  
+- Medycyna pracy  
+- Diagnostyka obrazowa i laboratoryjna  
+- Ultrasonografia"
+H12,,,,,
+H14,,,,,Kardiologia
+H27,1032,6.82,False,False,Pediatria
+H17,1032,6.90.3.1,False,False,
+H26,1032,"[6.90.3.1, 10.3.8.1, 14.0.2.5]",False,False,Anestezjologia
+H8,1032,10.3.8.1,False,False,
+H28,1032,6.61,False,False,Ginekologia
+H20,1032,10.3.1.3,False,False,
+H4,1042,14.1.0.1,False,False,Neurochirurgia
+H2,1042,"[12.2.1.2, 14.1.1.1]",False,False,
+H13,1032,"[10.3.8.1, 15.0.4.0]",False,False,Ortopedia i traumatologia
+H18,1032,8.0.7.8,True,False,"- Chirurgia ogólna i naczyniowa  
+- Ginekologia i położnictwo  
+- Pediatria i neonatologia  
+- Neurologia i neurochirurgia  
+- Onkologia (chemioterapia, chirurgia onkologiczna)  
+- Ortopedia i traumatologia  
+- Urologia  
+- Kardiologia  
+- Laryngologia (otolaryngologia)  
+- Psychiatria  
+- Chirurgia plastyczna  
+- Rehabilitacja medyczna  
+- Anestezjologia i intensywna terapia  
+- Dermatologia  
+- Choroby zakaźne  
+- Alergologia  
+- Endokrynologia"
+H30,1032,10.3.8.1,False,False,Okulistyka
+H24,1032,,False,False,
+H22,1032,6.90.3.1,False,False,Diabetologia
+H1,,,,,
+H3,,,,,
+H16,,,,,

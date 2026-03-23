@@ -1,0 +1,40 @@
+=== §4.1 Key Numbers ===
+
+DATASET OVERVIEW
+  Total institutions in ELM19 (raw): 39
+  Institutions in ELM_s (≥50 norm): 30
+  Excluded (< 50 normal): 9
+  Total recordings in ELM_s: 54,779
+  Normal recordings: 26,568
+  Pathological recordings: 28,211
+  Norm fraction: 48.5%
+
+DEMOGRAPHICS (ELM_n)
+  Age range: 16.0 – 70.0 years
+  Median age overall: 39.2 years
+  Sex: 13,746 female, 12,822 male
+
+RECORDING DURATION (ELM_n)
+  Median duration: 1152 s
+  Range: 336 – 8322 s
+
+ACQUISITION HARDWARE
+  Hardware 1032: 17 institutions
+  Hardware 1042: 4 institutions
+  Hardware ExG : 0 institutions
+  Unknown hw   : 9 institutions
+
+ACQUISITION SOFTWARE
+  Institutions with known software: 20 / 30
+
+SAMPLING FREQUENCY (ELM_n)
+  Dominant sfreq: 250.0 Hz
+  Recordings ≥600 Hz: 10
+
+SPECIALIST / CHILDREN HOSPITALS
+  Specialist hospitals: 4
+  Children hospitals  : 0
+
+ACQUISITION FILTERS (ELM_n)
+  Recordings with highpass=0 Hz : 20,843
+  Recordings with highpass=0.16 Hz: 5,466
