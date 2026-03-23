@@ -26,7 +26,6 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.pipeline import Pipeline
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
-from src.harmonization.relief import RELIEFHarmonizer
 from src.config import load_site_classification_config, SiteClassificationConfig
 
 import os

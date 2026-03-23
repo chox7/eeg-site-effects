@@ -26,7 +26,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.pipeline import Pipeline
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
-from src.harmonization.relief import RELIEFHarmonizer
 from src.config import load_pathology_classification_config, PathologyClassificationConfig
 
 import os

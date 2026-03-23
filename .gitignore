@@ -4,12 +4,10 @@
 /models/
 catboost_info/
 _archive/
-*/shap_data/*
+nohup*.out
 
-# Results tables — add cleaned sections one by one as they are reviewed
-# (use /* not / so negation exceptions can un-ignore specific subdirs)
-results/tables/*
-!results/tables/01_exploratory_analysis/
+# Results — track tables and figures, ignore SHAP data
+results/shap_data/
 
 # Virtual Environments
 venv/
