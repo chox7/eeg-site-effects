@@ -10,6 +10,10 @@ _archive/
 # (use /* not / so negation exceptions can un-ignore specific subdirs)
 results/tables/*
 !results/tables/01_exploratory_analysis/
+!results/tables/04_paradox_analysis/
+!results/tables/05_pca_sensitivity/
+!results/tables/06_filter_robustness/
+!results/tables/07_dann/
 
 # Virtual Environments
 venv/
@@ -39,6 +43,8 @@ secrets.yaml
 
 # Logs & Temp Files
 *.log
+nohup*.out
+log.txt
 *~
 *.swp
 *.swo
