@@ -1,0 +1,32 @@
+# Pathology Classification - 04_dann
+# LOSO CV with calibration strategy on DANN-extracted features
+
+experiment_name: "04_dann_patho_clf"
+
+paths:
+  info_file: "data/ELM19/filtered/ELM19_info_filtered.csv"
+  features_file: "data/ELM19/dann/ELM19_features_dann_final.csv"
+  results_file: "results/tables/04_dann/patho_clf_results.csv"
+  pipeline_save_dir: "models/04_dann/patho_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/04_dann/patho_clf"
+
+harmonization_methods:
+  - raw
+
+catboost_params:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+  max_bin: 32
+
+cv:
+  n_splits: 5
+  random_state: 42
+  k_calibration: 30
+
+data:
+  covariates:
+    - age
+    - gender

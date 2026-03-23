@@ -1,35 +1,34 @@
-# Pathology Classification - 06_filter_robustness
-# LOSO CV with calibration strategy on filtered data
+# Pathology Classification - 03_harmonization
+# LOSO CV with calibration strategy
 
-experiment_name: "06_filter_robustness_patho_clf"
+experiment_name: "03_harmonization_patho_clf"
 
 paths:
   info_file: "data/ELM19/filtered/ELM19_info_filtered.csv"
-  features_file: "data/ELM19/filtered/ELM19_features_filtered.csv"  # Override with --features/-f
-  results_file: "results/tables/06_filter_robustness/patho_clf_results.csv"
-  pipeline_save_dir: "models/06_filter_robustness/patho_clf_pipelines"
-  shap_data_save_dir: "results/shap_data/06_filter_robustness/patho_clf"
+  features_file: "data/ELM19/filtered/ELM19_features_filtered.csv"
+  results_file: "results/tables/03_harmonization/patho_clf_results.csv"
+  pipeline_save_dir: "models/03_harmonization/patho_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/03_harmonization/patho_clf"
 
 harmonization_methods:
   - raw
+  - sitewise
+  - combat
+  - neurocombat
+  - covbat
 
 catboost_params:
-  iterations: 700
-  learning_rate: 0.08519504279364008
-  depth: 6
-  l2_leaf_reg: 1.1029971156522604
-  colsample_bylevel: 0.019946626267165004
-  task_type: "CPU"
-  thread_count: -1
-  boosting_type: "Plain"
-  bootstrap_type: "MVS"
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+  max_bin: 32
 
 cv:
   n_splits: 5
   random_state: 42
   k_calibration: 30
-
-ensemble_size: 30
 
 data:
   covariates:

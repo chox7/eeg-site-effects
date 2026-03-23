@@ -20,6 +20,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import matthews_corrcoef
 from sklearn.pipeline import Pipeline
@@ -88,6 +89,14 @@ Examples:
         help='Tag to identify this run in results (e.g., filter name)'
     )
 
+    parser.add_argument(
+        '--model',
+        type=str,
+        default='catboost',
+        choices=['catboost', 'logreg'],
+        help='Classifier model to use (default: catboost)'
+    )
+
     return parser.parse_args()
 
 
@@ -110,7 +119,7 @@ def get_scores(y_true, y_pred, hospitals):
     return scores
 
 
-def run_experiment(config: SiteClassificationConfig, harmonization_method: str = 'raw', tag: str = None):
+def run_experiment(config: SiteClassificationConfig, harmonization_method: str = 'raw', tag: str = None, model_name: str = 'catboost'):
     """
     Runs a full 5-fold stratified CV for site classification
     for a single harmonization method.
@@ -119,9 +128,10 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         config: Experiment configuration
         harmonization_method: Name of harmonization method to use
         tag: Optional tag to identify this run in results
+        model_name: Classifier to use ('catboost' or 'logreg')
     """
     tag_str = f" [{tag}]" if tag else ""
-    logger.info(f"Starting experiment: Site Classification with '{harmonization_method}'{tag_str}")
+    logger.info(f"Starting experiment: Site Classification with '{harmonization_method}', model='{model_name}'{tag_str}")
 
     # Create output directories
     if config.paths.pipeline_save_dir:
@@ -199,7 +209,12 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
                 batch=sites
             )))
 
-        pipeline_steps.append(("clf", CatBoostClassifier(**catboost_params)))
+        if model_name == 'catboost':
+            pipeline_steps.append(("clf", CatBoostClassifier(**catboost_params)))
+        elif model_name == 'logreg':
+            pipeline_steps.append(("clf", LogisticRegression(
+                max_iter=2000, random_state=config.cv.random_state, C=1.0
+            )))
 
         # Create and Fit Pipeline
         pipeline = Pipeline(steps=pipeline_steps)
@@ -211,6 +226,7 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         preds = pipeline.predict(X_test)
 
         scores_fold = get_scores(y_test, preds, all_hospitals)
+        scores_fold['model'] = model_name
         scores_fold['method'] = harmonization_method
         scores_fold['fold'] = fold + 1
         if tag:
@@ -290,7 +306,7 @@ def main():
 
     # Run experiments
     for method in methods_to_run:
-        run_experiment(config, harmonization_method=method, tag=args.tag)
+        run_experiment(config, harmonization_method=method, tag=args.tag, model_name=args.model)
 
 
 if __name__ == '__main__':

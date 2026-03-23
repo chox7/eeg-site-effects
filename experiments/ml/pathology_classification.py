@@ -20,13 +20,13 @@ import argparse
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier, metrics
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import LeaveOneGroupOut, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score
 from sklearn.pipeline import Pipeline
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 from src.harmonization.relief import RELIEFHarmonizer
-from src.models.gbe import GBE
 from src.config import load_pathology_classification_config, PathologyClassificationConfig
 
 import os
@@ -89,6 +89,14 @@ Examples:
         help='Tag to identify this run in results (e.g., filter name)'
     )
 
+    parser.add_argument(
+        '--model',
+        type=str,
+        default='catboost',
+        choices=['catboost', 'logreg'],
+        help='Classifier model to use (default: catboost)'
+    )
+
     return parser.parse_args()
 
 
@@ -114,7 +122,7 @@ def get_scores(y_true, y_prob, th=0.5):
     return mcc, acc, precision, recall, f1, auc
 
 
-def run_experiment(config: PathologyClassificationConfig, harmonization_method: str = 'raw', tag: str = None):
+def run_experiment(config: PathologyClassificationConfig, harmonization_method: str = 'raw', tag: str = None, model_name: str = 'catboost'):
     """
     Runs LOSO CV for pathology classification with calibration subset strategy.
 
@@ -122,9 +130,10 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
         config: Experiment configuration
         harmonization_method: Name of harmonization method to use
         tag: Optional tag to identify this run in results
+        model_name: Classifier to use ('catboost' or 'logreg')
     """
     tag_str = f" [{tag}]" if tag else ""
-    logger.info(f"Starting experiment: Pathology Classification (LOSO) with '{harmonization_method}'{tag_str}")
+    logger.info(f"Starting experiment: Pathology Classification (LOSO) with '{harmonization_method}', model='{model_name}'{tag_str}")
 
     # Create output directories
     if config.paths.pipeline_save_dir:
@@ -255,10 +264,13 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
             X_test_harm = X_test_full
 
         # --- 4. Classification ---
-        logger.info("Training classifier...")
-        clf = GBE(esize=config.ensemble_size, fun_model=CatBoostClassifier, **catboost_params)
-
-        clf.fit(X_train_harm, y_train_classifier, verbose=False)
+        logger.info(f"Training {model_name} classifier...")
+        if model_name == 'catboost':
+            clf = CatBoostClassifier(**catboost_params)
+            clf.fit(X_train_harm, y_train_classifier, verbose=False)
+        elif model_name == 'logreg':
+            clf = LogisticRegression(max_iter=2000, random_state=config.cv.random_state, C=1.0)
+            clf.fit(X_train_harm, y_train_classifier)
 
         # Predict
         y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
@@ -266,7 +278,7 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
         # Scores
         mcc, acc, precision, recall, f1, auc = get_scores(y_test_full, y_pred_proba)
         scores = {'accuracy': acc, 'precision': precision, 'recall': recall, 'f1-score': f1, 'auc': auc, 'mcc': mcc,
-                  'hospital': hospital_test, 'method': harmonization_method, 'n_calib': len(X_calib),
+                  'hospital': hospital_test, 'model': model_name, 'method': harmonization_method, 'n_calib': len(X_calib),
                   'n_test': len(X_test_full)}
         if tag:
             scores['tag'] = tag
@@ -351,7 +363,7 @@ def main():
 
     # Run experiments
     for method in methods_to_run:
-        run_experiment(config, harmonization_method=method, tag=args.tag)
+        run_experiment(config, harmonization_method=method, tag=args.tag, model_name=args.model)
 
 
 if __name__ == '__main__':
