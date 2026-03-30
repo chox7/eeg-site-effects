@@ -35,6 +35,15 @@ except ImportError:
     # sklearn not installed - cv_metrics functions unavailable
     pass
 
+# Import data_prep utilities
+from src.utils.data_prep import (
+    load_experiment_data,
+    prepare_pathology_labels,
+    append_results_csv,
+    PATHOLOGY_LABEL_MAP,
+    COLUMN_RENAME_MAP,
+)
+
 __all__ = [
     # eeg_constants
     "CHANNELS_19",
@@ -50,4 +59,10 @@ __all__ = [
     "get_scores_binary",
     "compute_confusion_matrix",
     "stratified_site_folds",
+    # data_prep
+    "load_experiment_data",
+    "prepare_pathology_labels",
+    "append_results_csv",
+    "PATHOLOGY_LABEL_MAP",
+    "COLUMN_RENAME_MAP",
 ]

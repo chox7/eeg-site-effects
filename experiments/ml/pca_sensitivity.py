@@ -1,29 +1,31 @@
 import pandas as pd
-import numpy as np
 import os
 import sys
-import json
+import yaml
 import logging
+from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler, LabelEncoder
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut, train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score
-from catboost import CatBoostClassifier, metrics
-from combatlearn.combat import ComBat
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from src.harmonization import make_harmonizer
+from src.utils.cv_metrics import get_scores_binary, get_scores_multiclass
+from src.utils.data_prep import load_experiment_data, prepare_pathology_labels, append_results_csv
 
-from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
+CONFIG_PATH = 'experiments/configs/pca_sensitivity.yaml'
 
 # --- Constants ---
 INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
 FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
 
-RESULTS_PATH_SITE = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_site_full.csv'
+RESULTS_PATH_SITE = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_site_.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_SITE), exist_ok=True)
 
-RESULTS_PATH_PATHO = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_full_single_catboost.csv'
+RESULTS_PATH_PATHO = 'results/tables/05_pca_sensitivity/pca_sensitivity_results_patho_.csv'
 os.makedirs(os.path.dirname(RESULTS_PATH_PATHO), exist_ok=True)
 
-LOG_FILE_PATH = 'results/logs/05_pca_sensitivity/pca_sensitivity_log_full_single_catboost.log'
+LOG_FILE_PATH = 'results/logs/05_pca_sensitivity/pca_sensitivity_log_.log'
 os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
 COVARIATES = ['age', 'gender']
@@ -33,51 +35,14 @@ LABEL_COLUMN = 'pathology_label'
 RANDOM_STATE = 42
 N_SPLITS_SITE = 5
 K_CALIBRATION = 30  # For pathology classification
+N_PARALLEL = 12
 
 METHODS = ['raw', 'sitewise', 'combat', 'neurocombat', 'covbat']
+MODELS = ['catboost', 'logreg']
 # --- PCA Parameters ---
 PCA_VARIANTS = ['none', 'all', 0.99, 0.95, 0.90, 0.80]
 
-# --- CatBoost Parameters ---
-CATBOOST_PARAMS_SITE = {
-    'iterations': 2000,
-    'learning_rate': 0.2136106733298358,
-    'depth': 5.0,
-    'l2_leaf_reg': 1.0050061307458207,
-    'early_stopping_rounds': 50,
-
-    'loss_function': 'MultiClass',
-    'eval_metric': 'MCC',
-
-    'task_type': "GPU",
-    'thread_count': 20,
-    'random_seed': RANDOM_STATE,
-    'verbose': False,
-    'allow_writing_files': False
-}
-
-# Pathology params loaded from Optuna tuning (run tune_catboost_pca.py first)
-CATBOOST_PARAMS_PATHO_PATH = 'config/params/catboost_patho_best_time_auc_ratio.json'
-
 logger = logging.getLogger(__name__)
-
-
-def load_catboost_params_patho():
-    """Load tuned CatBoost params from JSON file."""
-    with open(CATBOOST_PARAMS_PATHO_PATH, 'r') as f:
-        params = json.load(f)
-    # Remove metadata keys
-    params.pop('best_auc', None)
-    params.pop('n_trials', None)
-    # Add fixed params
-    params['objective'] = 'Logloss'
-    params['eval_metric'] = metrics.AUC()
-    params['allow_writing_files'] = False
-    params['verbose'] = False
-    params['random_seed'] = RANDOM_STATE
-    params['task_type'] = 'GPU'
-    params['max_bin'] = 32
-    return params
 
 
 def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
@@ -113,16 +78,7 @@ def apply_scaling_and_pca(X_train, X_test, pca_variance, X_calib=None):
 
     return X_train_p, X_test_p, X_calib_p, n_comps
 
-def get_scores_site_classification(y_true, y_pred, hospitals):
-    scores = {"mcc_overall": matthews_corrcoef(y_true, y_pred)}
-
-    mcc_per_class = {
-        f"mcc_{cls}": matthews_corrcoef((y_true == cls), (y_pred == cls)) for cls in hospitals
-    }
-    scores.update(mcc_per_class)
-    return scores
-
-def run_site_classification(X, y, info_df, method, pca_var):
+def run_site_classification(X, y, info_df, method, pca_var, catboost_params, model_name='catboost'):
     """
     Runs a full 5-fold stratified CV for site classification
     for a single harmonization method with PCA.
@@ -135,6 +91,9 @@ def run_site_classification(X, y, info_df, method, pca_var):
     cov = info_df[COVARIATES]
     all_hospitals = sites.unique()
 
+    le = LabelEncoder()
+    le.fit(all_hospitals)
+
     for fold, (train_idx, test_idx) in enumerate(skf.split(X, y)):
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
@@ -143,35 +102,32 @@ def run_site_classification(X, y, info_df, method, pca_var):
         X_train_pca, X_test_pca, _, n_features = apply_scaling_and_pca(X_train, X_test, pca_var)
 
         # --- STEP 2: HARMONIZATION ---
-        if method == 'raw':
-            X_train_harm = X_train_pca
-            X_test_harm = X_test_pca
-        else:
-            if method == 'combat':
-                harmonizer = ComBat(batch=sites, method='johnson')
-            elif method == 'neurocombat':
-                harmonizer = ComBat(batch=sites, discrete_covariates=cov[['gender']],
-                                    continuous_covariates=cov[['age']], method='fortin')
-            elif method == 'covbat':
-                harmonizer = ComBat(batch=sites, discrete_covariates=cov[['gender']],
-                                    continuous_covariates=cov[['age']], method='chen')
-            elif method == 'sitewise':
-                harmonizer = SiteWiseStandardScaler(batch=sites)
-            else:
-                raise ValueError(f"Method {method} not implemented in PCA script")
-
+        harmonizer = make_harmonizer(method, sites, cov_df=cov)
+        if harmonizer:
             harmonizer.fit(X_train_pca)
-
-            # Transform
             X_train_harm = harmonizer.transform(X_train_pca)
             X_test_harm = harmonizer.transform(X_test_pca)
+        else:
+            X_train_harm = X_train_pca
+            X_test_harm = X_test_pca
 
         # --- STEP 3: CLASSIFICATION ---
-        clf = CatBoostClassifier(**CATBOOST_PARAMS_SITE)
-        clf.fit(X_train_harm, y_train)
-        preds = clf.predict(X_test_harm)
+        if model_name == 'catboost':
+            clf = CatBoostClassifier(**catboost_params)
+            clf.fit(X_train_harm, y_train, verbose=False)
+        elif model_name == 'svm':
+            clf = SVC(kernel='rbf', probability=True, C=1.0, random_state=RANDOM_STATE)
+            clf.fit(X_train_harm, y_train)
+        elif model_name == 'logreg':
+            clf = LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, C=1.0)
+            clf.fit(X_train_harm, y_train)
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
 
-        scores_fold = get_scores_site_classification(y_test, preds, all_hospitals)
+        y_prob = clf.predict_proba(X_test_harm)
+
+        scores_fold = get_scores_multiclass(y_test, y_prob, le)
+        scores_fold['model'] = model_name
         scores_fold['method'] = method
         scores_fold['fold_id'] = fold
         scores_fold['pca_var'] = pca_var
@@ -180,19 +136,7 @@ def run_site_classification(X, y, info_df, method, pca_var):
 
     return detailed_results
 
-def get_scores_pathology_classification(y_true, y_prob, th=0.5):
-    y_pred = y_prob > th
-
-    mcc = matthews_corrcoef(y_true, y_pred)
-    acc = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, zero_division=0)
-    recall = recall_score(y_true, y_pred, zero_division=0)
-    f1 = f1_score(y_true, y_pred, zero_division=0)
-    auc = roc_auc_score(y_true, y_prob)
-
-    return mcc, acc, precision, recall, f1, auc
-
-def run_pathology_classification(X, y, info_df, method, pca_var):
+def run_pathology_classification(X, y, info_df, method, pca_var, catboost_params, model_name='catboost'):
     """
     Runs LOSO CV for pathology classification with calibration subset strategy.
     Transforms features with PCA.
@@ -247,58 +191,59 @@ def run_pathology_classification(X, y, info_df, method, pca_var):
 
         X_fit_harm = pd.concat([X_train_norm_pca, X_calib_pca], axis=0)
 
-        if method == 'raw':
+        harmonizer = make_harmonizer(method, info_df[SITE_COLUMN], cov_df=info_df)
+        if harmonizer:
+            harmonizer.fit(X_fit_harm)
+            X_train_harm = harmonizer.transform(X_train_pca)
+            X_test_harm = harmonizer.transform(X_test_pca)
+        else:
             X_train_harm = X_train_pca
             X_test_harm = X_test_pca
-        else:
-            if method == 'combat':
-                harmonizer = ComBat(
-                    batch=info_df[SITE_COLUMN],
-                    method='johnson'
-                )
-            elif method == 'neurocombat':
-                harmonizer = ComBat(
-                    batch=info_df[SITE_COLUMN],
-                    discrete_covariates=info_df[['gender']],
-                    continuous_covariates=info_df[['age']],
-                    method='fortin'
-                )
-            elif method == 'covbat':
-                harmonizer = ComBat(
-                    batch=info_df[SITE_COLUMN],
-                    discrete_covariates=info_df[['gender']],
-                    continuous_covariates=info_df[['age']],
-                    method='chen'
-                )
-            elif method == 'sitewise':
-                harmonizer = SiteWiseStandardScaler(
-                    batch=info_df[SITE_COLUMN]
-                )
-            else:
-                raise ValueError(f"Method {method} not implemented in PCA script")
-                harmonizer = None
-
-            if harmonizer:
-                harmonizer.fit(X_fit_harm)
-                X_train_harm = harmonizer.transform(X_train_pca)
-                X_test_harm = harmonizer.transform(X_test_pca)
 
         # --- STEP 3: CLASSIFICATION ---
-        catboost_params = load_catboost_params_patho()
-        clf = CatBoostClassifier(**catboost_params)
-        clf.fit(X_train_harm, y_train_pool, verbose=False)
-
-        y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
+        if model_name == 'catboost':
+            clf = CatBoostClassifier(**catboost_params)
+            clf.fit(X_train_harm, y_train_pool, verbose=False)
+            y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
+        elif model_name == 'svm':
+            clf = SVC(kernel='rbf', probability=True, C=1.0, random_state=RANDOM_STATE)
+            clf.fit(X_train_harm, y_train_pool)
+            y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
+        elif model_name == 'logreg':
+            clf = LogisticRegression(max_iter=2000, random_state=RANDOM_STATE, C=1.0)
+            clf.fit(X_train_harm, y_train_pool)
+            y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
 
         # Scores
-        mcc, acc, precision, recall, f1, auc = get_scores_pathology_classification(y_test_full, y_pred_proba)
-        scores = {'accuracy': acc, 'precision': precision, 'recall': recall, 'f1-score': f1, 'auc': auc, 'mcc': mcc,
-                  'hospital': hospital_test, 'method': method, 'n_calib': len(X_calib),
-                  'n_test': len(X_test_full), 'pca_var': pca_var, 'n_features': n_features}
+        s = get_scores_binary(y_test_full, y_pred_proba)
+        scores = {
+            'mcc': s['MCC'], 'accuracy': s['Accuracy'], 'precision': s['Precision'],
+            'recall': s['Recall'], 'f1-score': s['F1-Score'], 'auc': s['AUC'],
+            'model': model_name, 'hospital': hospital_test, 'method': method,
+            'n_calib': len(X_calib), 'n_test': len(X_test_full),
+            'pca_var': pca_var, 'n_features': n_features,
+        }
 
         detailed_results.append(scores)
 
     return detailed_results
+
+
+def _run_job(task, X, y, info_df, method, pca_var, catboost_params, model_name):
+    """Run a single (task, method, pca_var, model) combination. Used by joblib."""
+    logger.info(f"[STARTING] {model_name} | {task} | {method} | pca={pca_var}")
+    if task == 'site':
+        results = run_site_classification(
+            X, y, info_df, method, pca_var, catboost_params, model_name,
+        )
+    else:
+        results = run_pathology_classification(
+            X, y, info_df, method, pca_var, catboost_params, model_name,
+        )
+    logger.info(f"[DONE] {model_name} | {task} | {method} | pca={pca_var}")
+    return task, method, pca_var, model_name, results
 
 
 def main():
@@ -319,28 +264,15 @@ def main():
 
     logger.info(f"Logger initialized. Saving logs to: {LOG_FILE_PATH}")
 
+    logger.info(f"Loaded config from {CONFIG_PATH}")
+
     try:
-        info = pd.read_csv(INFO_FILE_PATH)
-        feats = pd.read_csv(FEATURES_FILE_PATH)
-
-        info = info.rename(columns={
-            'age_dec': 'age', 'patient_sex': 'gender',
-            'institution_id': 'hospital_id', 'classification': 'pathology_label'
-        })
-
-        all_hospitals = info['hospital_id'].unique()
-        info['hospital_id'] = info['hospital_id'].astype(
-            pd.CategoricalDtype(categories=all_hospitals, ordered=False)
-        )
-
-        label_map = {'norm': 0, 'patho': 1, 'normal': 0, 'pathological': 1}
-        y_patho = info['pathology_label'].map(label_map)
+        info, feats = load_experiment_data(INFO_FILE_PATH, FEATURES_FILE_PATH)
+        y_patho = prepare_pathology_labels(info)
         y_site = info['hospital_id']
-
         logger.info(f"Loaded data. Shape: {feats.shape}")
-
     except FileNotFoundError:
-        logger.error("Nie znaleziono plików danych.")
+        logger.error("Data files not found.")
         return
 
     # --- SITE PREPARATION (Normals only) ---
@@ -349,40 +281,43 @@ def main():
     y_site_only = y_site[norm_mask].reset_index(drop=True)
     info_site_only = info[norm_mask].reset_index(drop=True)
 
-    for target_method in METHODS:
-        logger.info(f"==================================================")
-        logger.info(f"--- STARTING PCA SENSITIVITY ANALYSIS (Method: {target_method}) ---")
-        logger.info(f"==================================================")
-
+    job_args = []
+    for method in METHODS:
         for pca_var in PCA_VARIANTS:
-            var_name = f"{pca_var}" if pca_var else "No PCA"
-            logger.info(f"\nProcessing PCA Variance: {var_name} ...")
+            job_args.append(('site', X_site_only, y_site_only, info_site_only,
+                             method, pca_var, None))
+            job_args.append(('patho', feats, y_patho, info,
+                             method, pca_var, None))
 
-            # --- 1. SITE CLASSIFICATION ---
-            logger.info(f"--- STARTING EXPERIMENT: SITE CLASSIFICATION ---")
-            site_results = run_site_classification(
-                X_site_only, y_site_only, info_site_only, target_method, pca_var
-            )
+    for model_name in MODELS:
+        logger.info(f"=== Starting model group: {model_name} ===")
 
-            df_results_site = pd.DataFrame(site_results)
-            file_exists = os.path.isfile(RESULTS_PATH_SITE)
-            df_results_site.to_csv(RESULTS_PATH_SITE, mode='a', header=not file_exists, index=False)
+        if model_name == 'svm':
+            logger.info(f"Running {len(job_args)} {model_name} jobs with {N_PARALLEL} parallel workers...")
+            jobs = [delayed(_run_job)(*args, model_name) for args in job_args]
+            results = Parallel(n_jobs=N_PARALLEL, verbose=10)(jobs)
+        else:
+            logger.info(f"Running {len(job_args)} {model_name} jobs sequentially...")
+            results = [_run_job(*args, model_name) for args in job_args]
 
-            mean_overall_mcc = df_results_site['mcc_overall'].mean()
-            logger.info(f"Results saved for '{target_method}'. Mean Overall MCC: {mean_overall_mcc:.4f}")
+        # Collect and save after each model group
+        site_results = []
+        patho_results = []
+        for task, method, pca_var, _, result_list in results:
+            if task == 'site':
+                site_results.extend(result_list)
+            else:
+                patho_results.extend(result_list)
 
-            # --- 2. PATHOLOGY CLASSIFICATION ---
-            logger.info(f"--- STARTING EXPERIMENT: PATHOLOGY CLASSIFICATION ---")
-            patho_results = run_pathology_classification(
-                feats, y_patho, info, target_method, pca_var
-            )
-            df_results_patho = pd.DataFrame(patho_results)
-            file_exists = os.path.isfile(RESULTS_PATH_PATHO)
-            df_results_patho.to_csv(RESULTS_PATH_PATHO, mode='a', header=not file_exists, index=False)
+        if site_results:
+            append_results_csv(pd.DataFrame(site_results), RESULTS_PATH_SITE)
+        if patho_results:
+            append_results_csv(pd.DataFrame(patho_results), RESULTS_PATH_PATHO)
 
-            mean_mcc = df_results_patho['mcc'].mean()
-            mean_auc = df_results_patho['auc'].mean()
-            logger.info(f"Results saved for '{target_method}'. Mean MCC: {mean_mcc:.4f}, Mean AUC: {mean_auc:.4f}")
+        logger.info(f"=== Finished model group: {model_name} — results saved ===")
+
+    logger.info("All experiments completed.")
+
 
 if __name__ == "__main__":
     main()
