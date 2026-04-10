@@ -148,7 +148,6 @@ class PathologyClassificationConfig:
         catboost_params: CatBoost hyperparameters
         cv: Cross-validation configuration
         data: Data column configuration
-        ensemble_size: Number of models in GBE ensemble
         experiment_name: Optional name for this experiment
     """
     paths: PathConfig
@@ -158,5 +157,4 @@ class PathologyClassificationConfig:
     catboost_params: CatBoostParams = field(default_factory=CatBoostParams)
     cv: CrossValidationConfig = field(default_factory=CrossValidationConfig)
     data: DataConfig = field(default_factory=DataConfig)
-    ensemble_size: int = 30
     experiment_name: Optional[str] = None

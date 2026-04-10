@@ -1,0 +1,18 @@
+# PCA Sensitivity Analysis — CatBoost hyperparameters
+# Site params: same as site_classification.yaml
+# Patho params: Optuna-tuned (best time/AUC ratio, 1500 iter)
+
+catboost_params_site:
+  iterations: 2000
+  learning_rate: 0.2136106733298358
+  depth: 5
+  l2_leaf_reg: 1.0050061307458207
+  early_stopping_rounds: 50
+  task_type: "GPU"
+
+catboost_params_patho:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"

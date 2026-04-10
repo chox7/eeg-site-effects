@@ -11,8 +11,7 @@ def compute_shap_from_pipeline(pipeline, X_test):
     - With 'harmonize' step: transforms X through the harmonizer first.
     - Without 'harmonize' step (raw): uses X_test directly.
 
-    Works with both GBE ensemble models (which expose ``compute_shap_values``)
-    and single CatBoost/tree models (uses ``shap.TreeExplainer``).
+    Works with tree models (uses ``shap.TreeExplainer``).
 
     Parameters
     ----------
@@ -24,7 +23,7 @@ def compute_shap_from_pipeline(pipeline, X_test):
     Returns
     -------
     shap_explanation : shap.Explanation
-        Shape ``(n_samples, n_features)`` for binary/GBE, or
+        Shape ``(n_samples, n_features)`` for binary, or
         ``(n_samples, n_features, n_classes)`` for multiclass.
     X_transformed : pd.DataFrame
         The (harmonized) features used for the SHAP computation.
@@ -41,11 +40,8 @@ def compute_shap_from_pipeline(pipeline, X_test):
             else pd.DataFrame(X_test, columns=model.feature_names_)
         )
 
-    if hasattr(model, 'compute_shap_values'):
-        shap_explanation = model.compute_shap_values(X_transformed)
-    else:
-        explainer = shap.TreeExplainer(model)
-        shap_explanation = explainer(X_transformed)
+    explainer = shap.TreeExplainer(model)
+    shap_explanation = explainer(X_transformed)
 
     return shap_explanation, X_transformed
 

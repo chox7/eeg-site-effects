@@ -83,7 +83,7 @@ The nonlinear classifier trained on the unharmonised
 2\,850-dimensional feature set (Riemannian covariance projections,
 multitaper power spectra, and inter-electrode coherence estimates)
 achieved an overall Matthews Correlation Coefficient (MCC) of
-$0.865 \pm 0.003$, confirming that site identity is strongly encoded
+$0.843 \pm 0.007$, confirming that site identity is strongly encoded
 in the feature space.
 SHAP explainability analysis identified inter-electrode coherence
 features---in particular occipital O1--O2 coherence and beta-band
@@ -208,7 +208,7 @@ The main contributions of this paper are as follows.
 \begin{enumerate}
   \item We demonstrate that the site effect in a large clinical EEG
         corpus is strong and broadly distributed, with a nonlinear
-        classifier achieving $\mathrm{MCC} = 0.865 \pm 0.003$ in a
+        classifier achieving $\mathrm{MCC} = 0.843 \pm 0.007$ in a
         site identification task.
   \item We introduce a \emph{two-classifier evaluation framework}
         that uses a logistic regression linear probe and a CatBoost
@@ -587,12 +587,12 @@ neuroCombat, and CovBat.
 \subsubsection{Downstream Classifier for Neuroscreening}
 \label{subsubsec:classifier}
 
-Original or harmonised feature vectors were passed to a
-gradient-boosted ensemble (GBE) model composed of 30 individual
-CatBoost~\cite{prokhorenkova2018catboost} classifiers, identical to
-the architecture described in~\cite{poziomska2026quantity}.
-Hyperparameters were fixed to the values reported
-in~\cite{poziomska2026quantity} to ensure comparability.
+Original or harmonised feature vectors were passed to a single
+CatBoost~\cite{prokhorenkova2018catboost} gradient-boosted classifier.
+Hyperparameters were tuned using the Optuna framework and fixed across
+all conditions: 1\,500 iterations, learning rate 0.07, depth 5,
+$\ell_2$ leaf regularisation 9, maximum bins 32, GPU-accelerated
+training.
 
 \subsection{Approach~2: Signal-Level Adversarial Harmonisation}
 \label{subsec:approach2_dann}
@@ -1001,23 +1001,23 @@ sources.
 
 The CatBoost nonlinear classifier trained on the unharmonised
 $\mathrm{ELM}_n$ feature set achieved an overall MCC of
-$0.865 \pm 0.003$ across the 30 institutions in 5-fold stratified
+$0.843 \pm 0.007$ across the 30 institutions in 5-fold stratified
 cross-validation, confirming that site identity is strongly and
 reliably encoded in the feature space.
 The logistic regression linear probe achieved an overall MCC of
-$\mathbf{[TBF]} \pm \mathbf{[TBF]}$ on the same unharmonised data.
-The LR--CatBoost gap of $\mathbf{[TBF]}$ on the unharmonised baseline
+$0.785 \pm 0.005$ on the same unharmonised data.
+The LR--CatBoost gap of $0.058$ on the unharmonised baseline
 establishes the degree to which the site effect in the raw feature
 space is already encoded in nonlinear covariance structure.
 
 Per-institution one-vs-rest MCC scores for the CatBoost classifier
 are summarised in Table~\ref{tab:per_site_mcc}.
-A total of 23 out of 30 institutions achieved average MCC scores
+A total of 22 out of 30 institutions achieved average MCC scores
 above 0.7.
 A small subset of institutions---H12, H13, H21, and
-H23---performed poorly (MCC 0.39--0.52), likely owing to
+H23---performed poorly (MCC 0.37--0.48), likely owing to
 distributional similarity with neighbouring sites in the corpus.
-Institution H5 achieved the lowest average MCC of 0.21.
+Institution H5 achieved the lowest average MCC of 0.16.
 
 \begin{table}[htbp]
   \centering
@@ -1030,23 +1030,23 @@ Institution H5 achieved the lowest average MCC of 0.21.
     \textbf{Institution} & \textbf{MCC} &
     \textbf{Institution} & \textbf{MCC} \\
     \midrule
-    H1  & $0.947 \pm 0.034$ & H16 & $0.918 \pm 0.012$ \\
-    H2  & $0.781 \pm 0.016$ & H17 & $0.844 \pm 0.016$ \\
-    H3  & $0.782 \pm 0.048$ & H18 & $0.890 \pm 0.026$ \\
-    H4  & $0.809 \pm 0.034$ & H19 & $0.954 \pm 0.035$ \\
-    H5  & $0.207 \pm 0.047$ & H20 & $0.933 \pm 0.017$ \\
-    H6  & $0.851 \pm 0.016$ & H21 & $0.467 \pm 0.112$ \\
-    H7  & $0.938 \pm 0.015$ & H22 & $0.915 \pm 0.012$ \\
-    H8  & $0.830 \pm 0.010$ & H23 & $0.407 \pm 0.113$ \\
-    H9  & $0.780 \pm 0.036$ & H24 & $0.805 \pm 0.015$ \\
-    H10 & $0.893 \pm 0.005$ & H25 & $0.922 \pm 0.010$ \\
-    H11 & $0.899 \pm 0.048$ & H26 & $0.828 \pm 0.015$ \\
-    H12 & $0.517 \pm 0.117$ & H27 & $0.748 \pm 0.014$ \\
-    H13 & $0.390 \pm 0.079$ & H28 & $0.941 \pm 0.030$ \\
-    H14 & $0.952 \pm 0.006$ & H29 & $0.682 \pm 0.025$ \\
-    H15 & $0.872 \pm 0.014$ & H30 & $0.626 \pm 0.098$ \\
+    H1  & $0.912 \pm 0.017$ & H16 & $0.902 \pm 0.015$ \\
+    H2  & $0.743 \pm 0.030$ & H17 & $0.800 \pm 0.033$ \\
+    H3  & $0.774 \pm 0.032$ & H18 & $0.869 \pm 0.021$ \\
+    H4  & $0.771 \pm 0.042$ & H19 & $0.952 \pm 0.033$ \\
+    H5  & $0.160 \pm 0.060$ & H20 & $0.921 \pm 0.030$ \\
+    H6  & $0.828 \pm 0.012$ & H21 & $0.451 \pm 0.088$ \\
+    H7  & $0.929 \pm 0.016$ & H22 & $0.893 \pm 0.010$ \\
+    H8  & $0.805 \pm 0.010$ & H23 & $0.365 \pm 0.081$ \\
+    H9  & $0.768 \pm 0.030$ & H24 & $0.764 \pm 0.022$ \\
+    H10 & $0.872 \pm 0.006$ & H25 & $0.887 \pm 0.017$ \\
+    H11 & $0.864 \pm 0.061$ & H26 & $0.785 \pm 0.034$ \\
+    H12 & $0.480 \pm 0.096$ & H27 & $0.715 \pm 0.020$ \\
+    H13 & $0.369 \pm 0.142$ & H28 & $0.924 \pm 0.031$ \\
+    H14 & $0.939 \pm 0.012$ & H29 & $0.663 \pm 0.014$ \\
+    H15 & $0.856 \pm 0.009$ & H30 & $0.547 \pm 0.098$ \\
     \midrule
-    \multicolumn{2}{l}{overall} & \multicolumn{2}{l}{$0.865 \pm 0.003$} \\
+    \multicolumn{2}{l}{overall} & \multicolumn{2}{l}{$0.843 \pm 0.007$} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1138,11 +1138,15 @@ relative to the unharmonised baseline (Table~\ref{tab:cohend_summary}).
 
 Table~\ref{tab:site_class_harmonisation} reports the LR-MCC and
 CatBoost-MCC for all conditions.
-The logistic regression linear probe assigned near-chance MCC to all
-harmonised conditions, confirming that marginal correction
-successfully removes the \emph{linear} component of the site effect.
+The logistic regression linear probe assigned near-chance MCC to
+site-wise standardisation (0.000) and neuroCombat (0.013), confirming
+that these methods successfully remove the \emph{linear} component of
+the site effect.
+CovBat retained a small but non-negligible linear residual
+(LR-MCC $= 0.176$), suggesting that its covariance-level correction
+leaves some linear site signal intact.
 The CatBoost nonlinear probe, by contrast, assigned near-ceiling MCC
-($> 0.98$) to all harmonised conditions applied without PCA
+($0.924$--$0.969$) to all harmonised conditions applied without PCA
 pre-orthogonalisation, demonstrating the \emph{harmonisation paradox}:
 the nonlinear covariance component of the site effect not only
 survives marginal correction but becomes \emph{more} salient to the
@@ -1216,23 +1220,23 @@ analogous results with PCA pre-orthogonalisation.
     \midrule
     \multicolumn{5}{l}{\textit{Feature-level, without PCA}} \\
     \quad Original (unharmonised)
-      & \textbf{[TBF]} & \textbf{[TBF]} & 0.865 & 0.003 \\
+      & 0.785 & 0.005 & 0.843 & 0.007 \\
     \quad Site-wise standardisation
-      & \textbf{[TBF]} & \textbf{[TBF]} & 0.986 & 0.003 \\
+      & 0.000 & 0.000 & 0.969 & 0.002 \\
     \quad neuroCombat
-      & \textbf{[TBF]} & \textbf{[TBF]} & 0.983 & 0.002 \\
+      & 0.013 & 0.006 & 0.966 & 0.002 \\
     \quad CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & 0.176 & 0.013 & 0.924 & 0.004 \\
     \midrule
     \multicolumn{5}{l}{\textit{Feature-level, with PCA pre-orthogonalisation}} \\
     \quad PCA only
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & 0.858 & 0.004 & 0.784 & 0.008 \\
     \quad PCA + site-wise stand.
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & 0.000 & 0.000 & 0.720 & 0.021 \\
     \quad PCA + neuroCombat
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & 0.034 & 0.005 & 0.710 & 0.016 \\
     \quad PCA + CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & 0.032 & 0.007 & 0.740 & 0.014 \\
     \midrule
     \multicolumn{5}{l}{\textit{Signal-level (both probes on $\mathbf{h}$)$^\dagger$}} \\
     \quad MINet ($\lambda \equiv 0$)
@@ -1270,7 +1274,7 @@ variability in AUC is markedly reduced.
   \centering
   \includegraphics[width=\textwidth]{Figs/patho_auc_pca_none.pdf}
   \caption{Per-institution neuroscreening AUC under the LOSO
-    protocol for the GBE classifier applied to raw features and
+    protocol for the CatBoost classifier applied to raw features and
     after four feature-level harmonisation methods, \emph{without}
     PCA pre-orthogonalisation.}
   \label{fig:patho_auc_no_pca}
@@ -1280,7 +1284,7 @@ variability in AUC is markedly reduced.
   \centering
   \includegraphics[width=\textwidth]{Figs/patho_auc_pca_all.pdf}
   \caption{Per-institution neuroscreening AUC under the LOSO
-    protocol for the GBE classifier applied to raw features and
+    protocol for the CatBoost classifier applied to raw features and
     after four feature-level harmonisation methods, \emph{with}
     full-variance PCA pre-orthogonalisation.
     All four methods cluster closely and track slightly above the
@@ -1298,13 +1302,30 @@ standardisation, and neuroCombat, 5-fold CV and LOSO) are included
 where available; all other cells await completion of the extended
 experiments.
 
-\textbf{[TBF: narrative summary once all conditions are
-complete, addressing: (i) whether harmonisation consistently improves
-on the unharmonised baseline; (ii) additional aggregate benefit of
-PCA pre-orthogonalisation; (iii) relative performance of CovBat
-versus neuroCombat and site-wise standardisation; (iv) where the
-DANN family sits relative to feature-level conditions; and (v)
-concordance between LOSO and CV results.]}
+Under the LOSO protocol without PCA pre-orthogonalisation,
+neuroCombat yields the highest mean AUC ($0.808 \pm 0.072$) and
+MCC ($0.420 \pm 0.122$), followed closely by site-wise
+standardisation (AUC $0.801 \pm 0.064$, MCC $0.407 \pm 0.116$).
+CovBat falls slightly below the unharmonised baseline
+(AUC $0.791 \pm 0.070$ vs.\ $0.800 \pm 0.078$), suggesting that
+its covariance-level correction does not translate into improved
+clinical discrimination under LOSO.
+With PCA pre-orthogonalisation, all four harmonisation methods
+converge to a narrow performance band
+(AUC $0.782$--$0.789$, MCC $0.370$--$0.395$), below the
+no-PCA results, indicating that the decorrelation step equalises
+conditions but at a modest cost to aggregate diagnostic accuracy.
+
+The logistic regression linear probe shows a similar pattern but at
+uniformly lower performance levels.
+Without PCA, CovBat yields the best LR AUC ($0.783 \pm 0.070$),
+followed by neuroCombat ($0.775 \pm 0.076$), with unharmonised
+features at $0.770 \pm 0.079$.
+The CatBoost--LR gap in neuroscreening performance is notably
+smaller ($\sim$0.03 AUC) than the gap in site classification,
+confirming that the clinical task relies less on nonlinear
+feature interactions than site discrimination does.
+\textbf{[TBF: complete once DANN conditions are finalised.]}
 
 \begin{table}[htbp]
   \centering
@@ -1318,17 +1339,17 @@ concordance between LOSO and CV results.]}
     \toprule
     \textbf{Method} & \textbf{MCC} & \textbf{AUC} \\
     \midrule
-    \multicolumn{3}{l}{\textit{GBE, without PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, without PCA pre-orthogonalisation}} \\
     \quad Unharmonised
-      & $0.560 \pm 0.005$ & $0.863 \pm 0.001$ \\
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad Site-wise standardisation
-      & $0.592 \pm 0.008$ & $0.878 \pm 0.003$ \\
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad neuroCombat
-      & $0.590 \pm 0.011$ & $0.877 \pm 0.003$ \\
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad CovBat
       & \textbf{[TBF]} & \textbf{[TBF]} \\
     \midrule
-    \multicolumn{3}{l}{\textit{GBE, with PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, with PCA pre-orthogonalisation}} \\
     \quad PCA only
       & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad PCA + site-wise stand.
@@ -1360,25 +1381,45 @@ concordance between LOSO and CV results.]}
     \toprule
     \textbf{Method} & \textbf{MCC} & \textbf{AUC} \\
     \midrule
-    \multicolumn{3}{l}{\textit{GBE, without PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, without PCA pre-orthogonalisation}} \\
     \quad Unharmonised
-      & $0.400 \pm 0.005$ & $0.737 \pm 0.006$ \\
+      & $0.399 \pm 0.134$ & $0.800 \pm 0.078$ \\
     \quad Site-wise standardisation
-      & $0.417 \pm 0.008$ & $0.752 \pm 0.007$ \\
+      & $0.407 \pm 0.116$ & $0.801 \pm 0.064$ \\
     \quad neuroCombat
-      & $0.427 \pm 0.011$ & $0.755 \pm 0.008$ \\
+      & $0.420 \pm 0.122$ & $0.808 \pm 0.072$ \\
     \quad CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.392 \pm 0.128$ & $0.791 \pm 0.070$ \\
     \midrule
-    \multicolumn{3}{l}{\textit{GBE, with PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, with PCA pre-orthogonalisation}} \\
     \quad PCA only
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.370 \pm 0.124$ & $0.782 \pm 0.076$ \\
     \quad PCA + site-wise stand.
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.389 \pm 0.127$ & $0.788 \pm 0.080$ \\
     \quad PCA + neuroCombat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.391 \pm 0.129$ & $0.787 \pm 0.079$ \\
     \quad PCA + CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.395 \pm 0.127$ & $0.789 \pm 0.080$ \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Logistic Regression, without PCA pre-orthogonalisation}} \\
+    \quad Unharmonised
+      & $0.359 \pm 0.124$ & $0.770 \pm 0.079$ \\
+    \quad Site-wise standardisation
+      & $0.373 \pm 0.115$ & $0.769 \pm 0.066$ \\
+    \quad neuroCombat
+      & $0.382 \pm 0.122$ & $0.775 \pm 0.076$ \\
+    \quad CovBat
+      & $0.386 \pm 0.123$ & $0.783 \pm 0.070$ \\
+    \midrule
+    \multicolumn{3}{l}{\textit{Logistic Regression, with PCA pre-orthogonalisation}} \\
+    \quad PCA only
+      & $0.356 \pm 0.126$ & $0.771 \pm 0.078$ \\
+    \quad PCA + site-wise stand.
+      & $0.391 \pm 0.118$ & $0.782 \pm 0.075$ \\
+    \quad PCA + neuroCombat
+      & $0.383 \pm 0.115$ & $0.782 \pm 0.075$ \\
+    \quad PCA + CovBat
+      & $0.386 \pm 0.119$ & $0.783 \pm 0.076$ \\
     \midrule
     \multicolumn{3}{l}{\textit{Signal-level adversarial harmonisation}} \\
     \quad MINet ($\lambda \equiv 0$)
@@ -1403,8 +1444,8 @@ concordance between LOSO and CV results.]}
 The site-classification experiment confirmed that the site effect is
 both strong and broadly distributed across the 2\,850-dimensional
 feature space of $\mathrm{ELM}_n$, with the CatBoost nonlinear
-classifier achieving an overall MCC of $0.865 \pm 0.003$.
-The range of per-site MCC values---from 0.954 (H19) to 0.207
+classifier achieving an overall MCC of $0.843 \pm 0.007$.
+The range of per-site MCC values---from 0.952 (H19) to 0.160
 (H5)---reflects the heterogeneity of the corpus: institutions with
 distinctive demographic profiles (e.g.\ H7 and H19, which serve
 predominantly older patients) or unusual recording protocols
@@ -1512,12 +1553,23 @@ observed LR--CatBoost gap pattern across all four DANN variants.]}
 \subsection{Impact on Clinical Neuroscreening}
 \label{subsec:disc_clinical}
 
-\textbf{[TBF: complete once all conditions are finalised, addressing
-concordance between CV and LOSO results, the relative benefit of PCA
-pre-orthogonalisation on clinical performance, the position of the
-DANN family relative to feature-level methods, and the practical
-significance of the observed AUC and MCC improvements for clinical
-deployment.]}
+Under the stringent LOSO protocol, the best feature-level condition
+(neuroCombat without PCA) achieves a mean AUC of
+$0.808 \pm 0.072$, a modest $+0.008$ improvement over the
+unharmonised baseline ($0.800 \pm 0.078$).
+This improvement, while consistent across most institutions,
+highlights the difficulty of the neuroscreening task in a
+multi-centre setting: even after harmonisation, institution-level
+AUC ranges from below 0.70 to above 0.90.
+PCA pre-orthogonalisation, despite substantially reducing the
+harmonisation paradox in site-discriminability, does not translate
+into improved diagnostic performance
+(best PCA condition AUC: $0.790 \pm 0.077$).
+This suggests that the covariance structure removed by PCA carries
+some diagnostically relevant variance alongside the site-related
+variance.
+\textbf{[TBF: complete with DANN results and practical deployment
+recommendations once all experiments are finalised.]}
 
 \subsection{Limitations}
 \label{subsec:limitations}
@@ -1587,7 +1639,7 @@ feature-level and signal-level harmonisation strategies under a
 unified two-classifier evaluation framework.
 
 The CatBoost nonlinear classifier achieved a site-identification MCC
-of $0.865 \pm 0.003$, confirming that site identity is strongly
+of $0.843 \pm 0.007$, confirming that site identity is strongly
 encoded in EEG feature representations.
 SHAP explainability analysis and ablation experiments identified
 inter-electrode coherence---particularly O1--O2 and beta-band

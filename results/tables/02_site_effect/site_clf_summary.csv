@@ -1,0 +1,11 @@
+model,method,MCC_mean,MCC_std
+catboost,raw,0.8435,0.0074
+catboost,sitewise,0.9689,0.0016
+catboost,combat,0.9679,0.002
+catboost,neurocombat,0.9661,0.0023
+catboost,covbat,0.9243,0.0039
+logreg,raw,0.7854,0.0054
+logreg,sitewise,0.0,0.0
+logreg,combat,0.0096,0.0061
+logreg,neurocombat,0.0132,0.0063
+logreg,covbat,0.1756,0.0127
