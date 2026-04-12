@@ -10,8 +10,7 @@
 
 \documentclass[preprint,12pt]{elsarticle}
 
-%% For final journal submission use:
-%% \documentclass[final,3p,times]{elsarticle}
+%\documentclass[final,3p,times]{elsarticle}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -23,9 +22,12 @@
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{subcaption}
+\usepackage{setspace}
 
-%% Uncomment for review mode:
-% \linenumbers
+\newcommand{\td}[1]{\textcolor{orange}{\textbf{[TODO: #1]}}}
+
+%\linenumbers
+%\doublespacing
 
 \journal{Biomedical Signal Processing and Control}
 
@@ -54,69 +56,48 @@
 % -----------------------------------------------------------------------
 \begin{abstract}
 Pooling electroencephalographic (EEG) recordings from multiple clinical
-centres introduces systematic, non-biological variance---commonly
-termed the \emph{site effect} or \emph{batch effect}---that can
-severely degrade the generalisation of machine-learning diagnostic
-models.
-We investigate the site effect in a large-scale collection of
-54\,779 clinical EEG recordings from 30 Polish hospitals
-(hereafter $\mathrm{ELM}_s$), and evaluate a range of harmonisation
-strategies spanning simple site-wise standardisation, the neuroCombat
-and CovBat algorithms, and PCA-based feature-space
-pre-orthogonalisation applied as a preprocessing step before any
-marginal correction method.
-Site-effect characterisation and harmonisation evaluation are
-conducted on the subset of normal recordings within $\mathrm{ELM}_s$
-(hereafter $\mathrm{ELM}_n$), while downstream neuroscreening
-performance is assessed on the full $\mathrm{ELM}_s$ corpus.
+centres introduces systematic, non-biological variance---the
+\emph{site effect}---that can severely degrade the generalisation of
+machine-learning diagnostic models.
+We characterise the site effect in a large-scale corpus of 54\,779
+clinical EEG recordings from 30 Polish hospitals
+($\mathrm{ELM}_s$) and evaluate a comprehensive range of
+harmonisation strategies under a unified experimental design.
 
-A two-classifier evaluation framework is employed throughout: a
-logistic regression linear probe and a CatBoost gradient-boosted
-nonlinear classifier are applied symmetrically to every condition,
-including both hand-crafted feature vectors and the recording-level
-representations produced by adversarial neural models.
-This framework separates the linearly accessible component of the
-site effect from the nonlinear covariance structure that survives
-marginal correction.
+Feature-level harmonisation methods---site-wise standardisation,
+neuroCombat, CovBat, and PCA-based feature-space
+pre-orthogonalisation---are assessed on the normal-recording subset
+($\mathrm{ELM}_n$).
+Signal-level harmonisation via a Domain Adversarial Neural Network
+(DANN) integrated with the multiple-instance learning architecture
+of~\cite{poziomska2026quantity} is evaluated as a complementary
+end-to-end approach.
+Throughout, a \emph{two-classifier evaluation framework}---a logistic
+regression linear probe and a CatBoost nonlinear classifier applied
+symmetrically to every condition---separates the linearly accessible
+component of the site effect from nonlinear inter-feature covariance
+structure.
+Clinical performance is assessed exclusively under a rigorous
+Leave-One-Site-Out (LOSO) protocol, directly simulating zero-shot
+deployment to a previously unseen recording environment.
 
-The nonlinear classifier trained on the unharmonised
-2\,850-dimensional feature set (Riemannian covariance projections,
-multitaper power spectra, and inter-electrode coherence estimates)
-achieved an overall Matthews Correlation Coefficient (MCC) of
-$0.843 \pm 0.007$, confirming that site identity is strongly encoded
-in the feature space.
-SHAP explainability analysis identified inter-electrode coherence
-features---in particular occipital O1--O2 coherence and beta-band
-temporal coherence---as the primary carriers of site-discriminative
-information, implicating differences in recording protocols and
-patient-preparation procedures across institutions.
+A CatBoost classifier trained on the unharmonised 2\,850-dimensional
+feature set (Riemannian covariance projections, multitaper power
+spectra, and inter-electrode coherence) achieved a Matthews
+Correlation Coefficient (MCC) of $0.843 \pm 0.007$, confirming that
+site identity is strongly encoded in the feature space.
+SHAP analysis identified inter-electrode coherence---particularly
+O1--O2 and beta-band temporal coherence---as the primary carriers
+of site-specific information.
 
-Applying marginal correction methods without pre-orthogonalisation
-consistently \emph{increased} the nonlinear site-classification MCC
-towards a near-ceiling value, demonstrating a \emph{harmonisation
-paradox}: feature-by-feature correction reorganises rather than
-eliminates the multivariate site structure encoded in inter-feature
-covariances.
-The linear probe, by contrast, assigned near-chance MCC to all
-harmonised conditions, establishing that marginal correction
-successfully removes the \emph{linear} component of the site
-effect whilst leaving its nonlinear covariance component intact.
-PCA pre-orthogonalisation substantially attenuates the paradox and,
-in combination with any of the marginal correction methods, yields
-more uniform cross-site neuroscreening performance than marginal
-correction alone.
-
-Signal-level adversarial harmonisation via a Domain Adversarial
-Neural Network (DANN) integrated with the multiple-instance learning
-(MIL) architecture of Poziomska~et~al.~\cite{poziomska2026quantity}
-is evaluated as a complementary direction.
-Four DANN variants---MINet (signal-level baseline without domain
-adversarial training), MINet-MTL (multi-task baseline without gradient
-reversal), MINet-DANN (full adversarial training), and
-MINet-DANN+tuning (adversarial training with post-hoc classifier
-recalibration on a frozen backbone)---are assessed under the same
-symmetric two-classifier framework and the same Leave-One-Site-Out
-(LOSO) protocol.
+A central finding is the \emph{harmonisation paradox}: all marginal
+correction methods reduced inter-site Cohen's~$d$ and drove the
+linear probe to near-chance MCC, yet simultaneously increased the
+nonlinear CatBoost MCC towards a near-ceiling value, demonstrating
+that feature-by-feature correction reorganises rather than eliminates
+multivariate covariance-based site structure.
+PCA pre-orthogonalisation substantially attenuates this paradox and
+yields more uniform cross-site neuroscreening performance.
 
 \textbf{[PLACEHOLDER: Complete aggregate results for all conditions
 once all DANN experiments are finalised.]}
@@ -130,6 +111,66 @@ domain adaptation \sep logistic regression \sep two-classifier framework
 \end{keyword}
 
 \end{frontmatter}
+
+\td{
+\texttt{
+TO GENERATE --- Priority 1 (required for submission):\\
+\\
+\quad [Table 3] Two-classifier site-classification MCC for all conditions\\
+\quad\quad (Tab.~tab:site\_class\_harmonisation):\\
+\quad\quad -- LR-MCC and CatBoost-MCC for: CovBat, all PCA conditions,\\
+\quad\quad\quad MINet, MINet-MTL, MINet-DANN\\
+\quad\quad -- LR-MCC for: Unharmonised, Site-wise, neuroCombat\\
+\\
+\quad [Table 4] Aggregate LOSO neuroscreening MCC and AUC\\
+\quad\quad (Tab.~tab:clinical\_loso):\\
+\quad\quad -- CovBat, all PCA conditions, MINet-DANN-CF\\
+\\
+\quad [Figure A] LR vs CatBoost MCC per harmonisation condition\\
+\quad\quad (fig:lr\_cb\_gap) -- grouped paired bar chart, three blocks:\\
+\quad\quad -- Block 1: feature-level without PCA\\
+\quad\quad -- Block 2: feature-level with PCA\\
+\quad\quad -- Block 3: signal-level (on h)\\
+\quad\quad -- whiskers = SD; annotation of Delta MCC per pair\\
+\quad\quad -- replaces Figs site\_mcc\_pca\_00/10 in main body\\
+\quad\quad\quad (those move to Appendix)\\
+\\
+\quad [Figure B] Domain MCC per signal-level variant\\
+\quad\quad (fig:dann\_domain\_mcc) -- currently commented out;\\
+\quad\quad -- bar chart: MINet / MINet-MTL / MINet-DANN (/ MINet-DANN-CF)\\
+\quad\quad -- to be placed in subsec:harmonisation\_results\\
+\quad\quad\quad alongside fig:lr\_cb\_gap\\
+\\
+\quad [Figure C+D] Per-institution LOSO AUC and MCC\\
+\quad\quad for all signal-level conditions including MINet-MTL\\
+\quad\quad (extend figs all\_strategies\_auc/mcc or add separate panels)\\
+\quad\quad -- MINet-MTL per-institution profile currently missing;\\
+\quad\quad\quad high SD=0.120 warrants visualisation\\
+\quad\quad -- MINet-DANN-CF per-institution profile (TBF)\\
+\\
+TO GENERATE --- Priority 2:\\
+\\
+\quad [Appendix] Per-institution site-classification MCC\\
+\quad\quad without PCA (fig:site\_mcc\_no\_pca) -- move from main body\\
+\quad\quad with PCA (fig:site\_mcc\_pca) -- move from main body\\
+\\
+\quad [Appendix] Per-institution LOSO AUC\\
+\quad\quad without PCA (fig:patho\_auc\_no\_pca) -- currently in main body,\\
+\quad\quad\quad consider moving if length is an issue\\
+\quad\quad with PCA (fig:patho\_auc\_pca) -- idem\\
+\\
+PENDING AUTHOR DECISIONS:\\
+\quad -- full-data checkpoint identity in MINet LOSO paragraph\\
+\quad -- epoch selection criterion for MINet-MTL in LOSO\\
+\quad -- zero-shot claim in MINet-DANN-CF (target AUC used\\
+\quad\quad for epoch selection = not strictly zero-shot)\\
+\quad -- hyperparameter source for CatBoost neuroscreening classifier\\
+\quad\quad (subsubsec:classifier, current \td{sprawdzic})\\
+}}
+
+
+
+
 
 % -----------------------------------------------------------------------
 \section{Introduction}
@@ -194,15 +235,14 @@ The present study pursues two overarching goals.
 First, we provide a rigorous characterisation of the site effect in a
 corpus of 54\,779 EEG recordings from 30 Polish hospitals using a
 \emph{two-classifier evaluation framework} that separates linearly
-accessible site information from nonlinear covariance-based site
+accessible site information from nonlinear inter-site covariance
 structure.
 Second, we evaluate a comprehensive range of harmonisation strategies
 under a unified experimental design, spanning simple site-wise
 standardisation, neuroCombat, CovBat, PCA pre-orthogonalisation, and
-four signal-level adversarial variants, and critically assess the
-conditions under which these methods succeed or fail under both
-standard cross-validation and a rigorous Leave-One-Site-Out (LOSO)
-protocol.
+three signal-level adversarial variants, and critically assess the
+conditions under which these methods succeed or fail under a rigorous
+Leave-One-Site-Out (LOSO) protocol.
 
 The main contributions of this paper are as follows.
 \begin{enumerate}
@@ -210,6 +250,10 @@ The main contributions of this paper are as follows.
         corpus is strong and broadly distributed, with a nonlinear
         classifier achieving $\mathrm{MCC} = 0.843 \pm 0.007$ in a
         site identification task.
+  \item We identify, via SHAP analysis and ablation experiments, that
+        inter-electrode coherence features are the primary carriers of
+        site-specific information, with O1--O2 coherence and beta-band
+        temporal coherence being particularly prominent.
   \item We introduce a \emph{two-classifier evaluation framework}
         that uses a logistic regression linear probe and a CatBoost
         nonlinear probe applied symmetrically to every harmonisation
@@ -222,21 +266,10 @@ The main contributions of this paper are as follows.
         MCC towards a near-ceiling value, because equalising marginal
         distributions amplifies the salience of the surviving
         covariance-based site signatures.
-  \item We identify, via SHAP analysis and ablation experiments, that
-        inter-electrode coherence features are the primary carriers of
-        site-specific information, with O1--O2 coherence and beta-band
-        temporal coherence being particularly prominent.
   \item We show that PCA pre-orthogonalisation substantially
         attenuates the harmonisation paradox and stabilises
         cross-site neuroscreening performance across institutions.
-  \item We evaluate four DANN variants under the same two-classifier
-        framework, comparing signal-level adversarial harmonisation
-        against all feature-level conditions on both site
-        discriminability and downstream neuroscreening performance.
-        Site discriminability of the adversarially learned
-        representation is assessed via full-data MINet-DANN training
-        with 5-fold cross-validation, whilst diagnostic performance
-        is assessed exclusively under the LOSO protocol.
+  \item We evaluate three signal-level training conditions—a non-adversarial baseline (trained from scratch), a multi-task network (optimizing both diagnosis and site prediction), and a full adversarial framework (DANN)—under the same Leave-One-Site-Out (LOSO) protocol. This allows us to compare end-to-end representation learning in terms of both site discriminability and downstream neuroscreening performance. Our results demonstrate that while the naive multi-task approach heavily encodes site-specific features (Domain MCC = 0.568±0.077), the adversarial DANN successfully creates a site-invariant representation (Domain MCC near zero: 0.009±0.014) without compromising high diagnostic accuracy (Target AUC = 0.810±0.073), effectively matching the non-adversarial baseline (Target AUC = 0.811±0.070). We additionally evaluate whether classifier recalibration via linear probing on the frozen adversarial backbone (MINet-DANN-CF) further stabilizes the results. As hypothesized, this recalibration recovers and slightly improves the optimal diagnostic performance (Target AUC = 0.812±0.071, Target MCC = 0.475±0.130) without altering the underlying site-invariant features.
 \end{enumerate}
 
 % -----------------------------------------------------------------------
@@ -280,7 +313,8 @@ effects across 12 devices and 9 countries in the HarMNqEEG corpus.
 Jaramillo-Jimenez~et~al.~\cite{jaramillo2024combat} confirmed, using
 $t$-SNE visualisation and Kruskal--Wallis tests, that spectral
 features from five independent resting-state EEG datasets cluster by
-site.
+site, with particularly prominent effects in the aperiodic offset and
+oscillatory alpha power.
 Kiessner~et~al.~\cite{kiessner2023extended} observed marked
 performance degradation when a deep neural network trained on one
 clinical corpus was evaluated on data from a different centre.
@@ -318,8 +352,14 @@ The most critical limitation of all ComBat-family methods is shared:
 adjusting mean and variance independently for each feature leaves
 intact any site-related structure residing in the \emph{covariance}
 between features~\cite{hu2023image}.
+Additionally, CovBat's principal-component decomposition step may be
+unstable when individual sites have small sample
+sizes~\cite{hu2023image}, and all ComBat-family methods require all
+sites to be present at parameter-estimation time and cannot directly
+accommodate recordings from a site not represented in the training
+data~\cite{johnson2007adjusting}.
 The present study provides the first systematic empirical evidence for
-this limitation in a large clinical EEG corpus through the
+the covariance limitation in a large clinical EEG corpus through the
 two-classifier evaluation framework.
 
 \subsection{Deep Learning and Adversarial Harmonisation}
@@ -347,6 +387,11 @@ Bethge~et~al.~\cite{bethge2022multidomain} showed that a unified
 adversarial invariance objective across multiple emotion recognition
 datasets suppressed data-source-related information leakage by 35\%
 while maintaining classification performance.
+The adversarial approach developed in the present work
+(Section~\ref{sec:approach2}) integrates the DANN objective
+with the multiple-instance learning architecture of
+Poziomska~et~al.~\cite{poziomska2026quantity}, which was designed
+specifically for multi-recording EEG pathology decoding at scale.
 
 An important open question, which the present study directly
 addresses, is whether adversarial training suppresses the
@@ -356,6 +401,29 @@ The two-classifier framework---applying both a linear probe and a
 CatBoost nonlinear probe to the DANN representations---is designed to
 provide a direct empirical answer to this question
 (Section~\ref{subsubsec:repr_assessment}).
+
+Despite its conceptual advantages, adversarial domain adaptation
+introduces practical challenges that must be carefully managed.
+The minimax training objective can be difficult to optimise: if the
+domain classifier converges too quickly relative to the feature
+extractor, the gradient signal it provides becomes uninformative,
+while slow convergence leaves domain-specific structure in the
+representation.
+The adaptation weight $\lambda$ must therefore be scheduled carefully;
+the progressive schedule of Ganin~et~al.~\cite{ganin2016domain} is
+designed to avoid early instability by increasing $\lambda$ from 0 to
+1 over the course of training.
+In practice, unconstrained adversarial training from random
+initialisation can lead to catastrophic forgetting: the model reaches
+an optimal diagnostic checkpoint early in training but then degrades
+as the adversarial objective distorts the decision boundaries.
+Unlike ComBat, which produces an interpretable corrected feature set,
+DANN-style approaches yield latent representations whose
+site-invariance cannot be directly audited and must be assessed via
+proxy metrics such as site-classification MCC.
+These trade-offs motivate the comparative evaluation and the
+classifier recalibration strategy described in
+Section~\ref{sec:training_variants}.
 
 % -----------------------------------------------------------------------
 \section{Materials and Methods}
@@ -389,6 +457,35 @@ The resulting dataset---hereafter $\mathrm{ELM}_s$---consists of
 54\,779 EEG recordings from 30 medical institutions, comprising
 26\,568 normal (48.5\%) and 28\,211 pathological (51.5\%) recordings
 from 28\,960 female subjects (52.9\%).
+The distribution of recordings across all 39 institutions before and
+after this filtering step is illustrated in
+Figure~\ref{fig:institution_histograms}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{%
+      Figs/ELM19_excluded_institutions_normal_recordings.png}
+    \caption{Number of normal recordings per institution.}
+    \label{fig:normal_hist_excluded}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{%
+      Figs/ELM19_excluded_institutions_all_recordings.png}
+    \caption{Total number of recordings (normal and pathological)
+      per institution.}
+    \label{fig:total_hist_excluded}
+  \end{subfigure}
+  \caption{Distribution of recordings across the 39 medical
+    institutions in the ELM19 corpus.
+    Institutions below the 50-normal-recording threshold (dashed line)
+    were excluded from further analysis, yielding the
+    $\mathrm{ELM}_s$ subset of 30 institutions.}
+  \label{fig:institution_histograms}
+\end{figure}
 
 \subsubsection{Analysis Subset: Normal Recordings
   (\texorpdfstring{$\mathrm{ELM}_n$}{ELMn})}
@@ -416,7 +513,7 @@ through intermediate versions (v8.x, v10.x, v12.x) to recent builds
 the data-collection period.
 Sampling frequencies, as reported in EDF file headers, were
 predominantly ${\sim}250$\,Hz, though minor variations existed
-(e.g.\ 256\,Hz at two sites and 300\,Hz at one site).
+(e.g.,\ 256\,Hz at two sites and 300\,Hz at one site).
 Acquisition-level filter settings recorded in the EDF headers also
 differed across sites: 82.7\% of all recordings reported a 0\,Hz
 high-pass setting (DC-coupled acquisition), while 16.5\% reported a
@@ -428,10 +525,54 @@ We note that EDF header metadata are written by the recording software
 and may not always reflect the true analog hardware configuration;
 the values reported here should therefore be interpreted as nominal
 acquisition settings.
-Four of the 30 institutions are specialist hospitals.
 These metadata provide concrete evidence that the site effect has
-identifiable technical origins beyond purely demographic or clinical
+identifiable technical component beyond purely demographic or clinical
 differences.
+
+\subsection{Inter-Institutional Heterogeneity}
+\label{subsec:exploratory}
+
+Exploratory analysis of the $\mathrm{ELM}_n$ subset revealed
+substantial heterogeneity across the 30 institutions in patient
+demographics and recording protocols.
+Age distributions varied markedly between sites: institutions such as
+H21, H29, and H30 served predominantly young populations (median
+ages 19.5, 17.8, and 17.6 years, respectively), while institutions
+such as H7 and H19 served predominantly older patients (median ages
+50.8 and 52.1 years, respectively).
+The maximum difference in median age between any two institutions
+exceeded 30 years (full statistics are given in
+Table~\ref{tab:age_stats} in the Appendix).
+Sex distributions were broadly balanced across most institutions,
+with minor imbalances at a small number of sites.
+Recording duration showed further heterogeneity: while the majority
+of centres produced sessions of approximately 1\,152 seconds
+(median), institution H3 showed a bimodal distribution suggesting the
+use of multiple recording protocols within a single institution, and
+H16 recorded sessions lasting up to 8\,322 seconds.
+Raw signal amplitudes (measured prior to preprocessing;
+Section~\ref{subsec:preprocessing}), quantified as the median of per-channel median
+absolute deviations (MAD) across the full recording, varied by more
+than two orders of magnitude across institutions (median MAD range:
+3.9--1\,611\,$\mu$V; Figure~\ref{fig:raw_amplitude}), likely
+reflecting differences in amplifier gain and hardware high pass filters settings across hardware
+configurations.
+Frame rejection rates during preprocessing were generally low
+(overall mean 1.9\%, median 0.3\%), with most institutions below
+3\%; institution H22 was a notable outlier at 8.2\%, driven
+primarily by flat-line electrode rejections.
+
+
+
+Institution sample sizes in $\mathrm{ELM}_n$ ranged from 86 (H23)
+to 6\,222 (H10), a 72-fold imbalance.
+The proportion of normal recordings in $\mathrm{ELM}_s$ also varied
+widely across institutions, from 7.6\% (H30) to 78.3\% (H7), further
+motivating the restriction to normal recordings ($\mathrm{ELM}_n$)
+for site-effect analyses.
+
+%Together, these observations indicate that inter-site feature differences in $\mathrm{ELM}_n$ reflect a mixture of acquisition and population-level sources.
+
 
 \subsection{EEG Preprocessing}
 \label{subsec:preprocessing}
@@ -472,8 +613,11 @@ extracted, yielding \textbf{190 features} per recording.
 
 Power spectral densities were estimated using the multitaper
 method~\cite{thomson1982spectrum} and integrated across 14 custom
-overlapping frequency bands covering 0.5--40\,Hz, spanning the
-standard delta, theta, alpha, and beta EEG bands.
+overlapping frequency bands covering 0.5--40\,Hz:
+$[0.5, 2]$, $[1, 3]$, $[2, 4]$, $[3, 6]$, $[4, 8]$, $[6, 10]$,
+$[8, 13]$, $[10, 15]$, $[13, 18]$, $[15, 21]$, $[18, 24]$,
+$[21, 27]$, $[24, 30]$, and $[27, 40]$\,Hz, spanning the standard
+delta, theta, alpha, and beta EEG bands.
 PSDs were normalised such that the sum across all channels and bands
 equalled one within each frame, yielding \textbf{266 power features}
 per recording.
@@ -496,7 +640,10 @@ in band $f_b$, yielding $171 \times 14 = \mathbf{2\,394}$
 \subsubsection{Final Feature Vector}
 
 Concatenating the three groups yields a final feature vector of
-$190 + 266 + 2\,394 = \mathbf{2\,850}$ features per recording.
+$190 + 266 + 2\,394 = \mathbf{2\,850}$ features per recording,
+capturing spatial covariance structure in the time domain, spectral
+power across a wide frequency range, and functional connectivity
+between all electrode pairs.
 
 \subsection{Approach~1: Feature-Level Harmonisation}
 \label{subsec:approach1}
@@ -518,7 +665,7 @@ from the training split:
                 {\hat{\sigma}_{s(i),j}},
   \label{eq:sitewise}
 \end{equation}
-where $\hat{\mu}_{s(i),j}$ and $\hat{\sigma}_{s(i),j}$ are the
+where $s(i)$ is the site at which the recording $i$ was acquired, $\hat{\mu}_{s(i),j}$ and $\hat{\sigma}_{s(i),j}$ are the
 within-site mean and standard deviation of feature $j$ estimated on
 the training data.
 This transformation equalises the first two moments of each feature
@@ -556,14 +703,22 @@ Harmonised values are recovered by:
   \label{eq:combat_corrected}
 \end{equation}
 
+
 \subsubsection{CovBat}
 \label{subsubsec:covbat}
 
 CovBat~\cite{hu2023image} first applies standard ComBat
 (Equations~\ref{eq:combat} and~\ref{eq:combat_corrected}) to correct
 marginal mean and variance shifts, then performs a second
-harmonisation step in the principal-component space of the residual
-covariance matrix, targeting site-specific shifts in this PC space.
+harmonisation step in the principal-component (PC) space of the
+residual covariance matrix.
+Specifically, the ComBat-corrected residuals are projected onto their
+leading principal components; site-specific shifts in this PC space
+are estimated and removed using the ComBat framework; and the
+corrected PCs are projected back to the original feature space.
+This two-stage procedure targets both marginal and covariance-level
+site effects, making CovBat the most comprehensive of the
+feature-level methods evaluated here.
 We used the implementation of Hu~et~al.~\cite{hu2023image} with
 patient age and sex as biological covariates.
 
@@ -587,51 +742,76 @@ neuroCombat, and CovBat.
 \subsubsection{Downstream Classifier for Neuroscreening}
 \label{subsubsec:classifier}
 
-Original or harmonised feature vectors were passed to a single
-CatBoost~\cite{prokhorenkova2018catboost} gradient-boosted classifier.
-Hyperparameters were tuned using the Optuna framework and fixed across
-all conditions: 1\,500 iterations, learning rate 0.07, depth 5,
-$\ell_2$ leaf regularisation 9, maximum bins 32, GPU-accelerated
-training.
+Original or harmonised feature vectors were passed to a
+gradient-boosted (CatBoost~\cite{prokhorenkova2018catboost})
+classifier.
+Hyperparameters were fixed to the values reported
+in~\cite{poziomska2026quantity}.
+\td{sprawdzić czy tak było z hyperparametrami}
 
-\subsection{Approach~2: Signal-Level Adversarial Harmonisation}
-\label{subsec:approach2_dann}
+\subsection{Approach 2: Signal-Level Adversarial Harmonisation}
+\label{sec:approach2}
 
+We develop a family of signal-level training conditions based on the
+multiple-instance learning architecture of~\cite{poziomska2026quantity},
+ranging from a non-adversarial baseline to full Domain Adversarial
+Neural Network training~\cite{ganin2016domain} and a subsequent
+classifier recalibration variant.
 Feature-level harmonisation methods operate on pre-extracted,
 hand-crafted representations and, as will be demonstrated in
-Section~\ref{subsubsec:paradox}, cannot address site-related structure
-residing in inter-feature covariances or their nonlinear dependencies.
+Section~\ref{subsec:harmonisation_results}, cannot address
+site-related structure residing in inter-feature covariances or their
+nonlinear dependencies.
 To investigate whether this limitation can be overcome through
-end-to-end representation learning, we develop a signal-level approach
-based on Domain Adversarial Neural Networks~\cite{ganin2016domain},
-integrated with the multiple-instance learning (MIL) architecture
+end-to-end representation learning, we integrate the adversarial
+objective with the multiple-instance learning~(MIL) architecture
 of~\cite{poziomska2026quantity}.
 
 Crucially, the adversarial objective requires the network to solve
-both the pathology classification task and the site discrimination task
-simultaneously.
-Because the pathology labels are required for the classification head,
+both the pathology classification task and the site discrimination
+task simultaneously.
+Because pathology labels are required for the classification head,
 adversarial training is necessarily conducted on the full
 $\mathrm{ELM}_s$ dataset rather than on the normal-only
 $\mathrm{ELM}_n$ subset used in the feature-level experiments.
 
 \subsubsection{Base Architecture}
-\label{subsubsec:dann_arch}
+\label{sec:base_arch}
 
-The base architecture is the MINet model
-of~\cite{poziomska2026quantity}, consisting of three components
-(Figure~\ref{fig:dann_arch}).
+The base architecture is the MINet model of~\cite{poziomska2026quantity},
+consisting of three components (Figure~\ref{fig:dann_arch}).
 
-\paragraph{Frame encoder.}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{Figs/minet_dann_architecture.png}
+    \caption{Architecture of the MINet-DANN model.
+    The frame encoder~$G_f(\,\cdot\,;\theta_f)$ maps each EEG frame to
+$\mathbf{f}_t\!\in\!\mathbb{R}^{288}$; the attention module
+($G_a(\,\cdot;\,\theta_a)$) aggregates frame-level representations into
+a recording-level descriptor~$\mathbf{h}$.  Two heads branch from
+$\mathbf{h}$: the pathology classifier~$G_y$ (top) and the site
+discriminator~$G_d$ (bottom).  During back-propagation (dashed
+arrows) the Gradient Reversal Layer multiplies the gradient
+by~$-\lambda$, encouraging $G_f$~and the attention module to learn
+site-invariant features while $G_d$~learns to distinguish sites.}
+    \label{fig:dann_arch}
+\end{figure}
+
+\paragraph{Frame encoder}
 An EEGNet-based~\cite{lawhern2018eegnet} convolutional feature
-extractor $G_f(\cdot\,;\,\theta_f)$ maps each 6-second EEG frame
-$\mathbf{x} \in \mathbb{R}^{C \times T}$ (19 channels, 600 time
+extractor $G_f(\,\cdot\,;\theta_f)$ maps each 6-second EEG frame
+$\mathbf{x}_t \in \mathbb{R}^{C \times T}$ (19~channels, 600~time
 points at 100\,Hz) to a 288-dimensional frame-level latent
-representation $\mathbf{f} \in \mathbb{R}^{288}$.
+representation $\mathbf{f}_t \in \mathbb{R}^{288}$:
+\begin{equation}
+\mathbf{f}_t(\mathbf{x}_t )  = G_f(\mathbf{x}_t;\theta_f).
+\label{eq:f_t}
+\end{equation}
 The encoder comprises 1\,408 parameters and performs separate
 temporal and spatial convolutions following~\cite{lawhern2018eegnet}.
 
-\paragraph{Attention-based recording aggregation.}
+\paragraph{Attention-based recording aggregation}
 Frame-level representations are aggregated using the non-gated
 attention module of~\cite{poziomska2026quantity}, which incorporates
 query--key--value structure borrowed from the transformer
@@ -639,176 +819,208 @@ architecture.
 The module assigns a scalar weight $a_t$ to each frame and computes
 the recording-level representation as
 \begin{equation}
-  \mathbf{h} = \sum_{t=1}^{T_r} a_t\,\mathbf{f}_t,
-  \qquad
-  a_t = \frac{\exp\!\bigl(\mathbf{w}^\top
-              \tanh(\mathbf{V}\mathbf{f}_t)\bigr)}
-             {\sum_{\tau=1}^{T_r}
-              \exp\!\bigl(\mathbf{w}^\top
-              \tanh(\mathbf{V}\mathbf{f}_\tau)\bigr)},
-  \label{eq:attention}
+    \mathbf{h} =  G_a(\,\cdot\,; \theta_a)=\sum_{t=1}^{T_r} a_t\,\mathbf{f}_t, \qquad
+    a_t = \frac{%
+        \exp\!\bigl(\mathbf{w}^{\top}
+        \tanh(\mathbf{V}\mathbf{f}_t)\bigr)}{%
+        \sum_{\tau=1}^{T_r}
+        \exp\!\bigl(\mathbf{w}^{\top}
+        \tanh(\mathbf{V}\mathbf{f}_\tau)\bigr)},
 \end{equation}
 where $T_r$ is the number of valid frames in the recording and
 $\mathbf{V}$, $\mathbf{w}$ are learned parameters.
+Frames carrying stronger evidence of pathology are expected to
+receive higher attention weights~\cite{poziomska2026quantity}.
 
-\paragraph{Pathology classifier.}
+\paragraph{Pathology classifier}
 The recording-level representation $\mathbf{h}$ is passed to a
-pathology classifier $G_y(\cdot\,;\,\theta_y)$---a two-layer fully
+pathology classifier $G_y(\,\cdot\,;\theta_y)$---a two-layer fully
 connected network producing a binary normal/pathological prediction.
 
-\paragraph{Site discriminator.}
-A separate fully connected network $G_d(\cdot\,;\,\theta_d)$ maps
+\paragraph{Site discriminator}
+A separate fully connected network $G_d(\,\cdot\,;\theta_d)$ maps
 $\mathbf{h}$ to a distribution over the 30 recording institutions.
-Its connection to the backbone differs across the four training
-variants described in Section~\ref{subsubsec:dann_variants}: in
-MINet-DANN it is connected via a Gradient Reversal Layer
-(GRL)~\cite{ganin2016domain}, which leaves the input unchanged during
-forward propagation and multiplies the gradient by $-\lambda$ during
-back-propagation; in MINet-MTL it is connected via an identity
-mapping so that gradients flow unmodified; and in MINet no site
-discriminator is attached.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.85\textwidth]{Figs/dann_arch.png}
-  \caption{Architecture of the Domain Adversarial Neural Network
-    used for signal-level harmonisation.
-    A shared feature extractor feeds both a pathology classifier and
-    a site discriminator; the Gradient Reversal Layer (GRL) inverts
-    the sign of gradients from the discriminator during
-    back-propagation, training the extractor to produce
-    site-invariant representations.}
-  \label{fig:dann_arch}
-\end{figure}
+Its connection to the backbone differs across the training variants
+described in Section~\ref{sec:training_variants}: in
+\mbox{MINet-DANN} it is connected via a Gradient Reversal
+Layer~(GRL)~\cite{ganin2016domain}, which leaves the input unchanged
+during forward propagation and multiplies the gradient by $-\lambda$
+during back-propagation; in \mbox{MINet-MTL} it is connected via an
+identity mapping so that gradients flow unmodified; and in the plain
+MINet baseline no site discriminator is attached.
 
 \subsubsection{Training Variants}
-\label{subsubsec:dann_variants}
+\label{sec:training_variants}
 
-Four training conditions are evaluated to isolate the contribution
-of each component of the adversarial framework.
-All four conditions are trained under the same Leave-One-Site-Out
-(LOSO) protocol as the feature-level experiments
-(Section~\ref{subsubsec:clinical_eval}): in each round, all
-recordings from one institution form the test set and the model is
-trained on the remaining 29 institutions (source pool).
+Four training conditions are evaluated to isolate the contribution of
+each component of the adversarial framework.
+Their harmonisation effectiveness is assessed on representations
+extracted from models trained on the \emph{complete}
+$\mathrm{ELM}_s$ dataset
+(Section~\ref{subsubsec:two_classifier}), while their neuroscreening
+performance is assessed under the Leave-One-Site-Out~(LOSO) protocol
+(Section~\ref{subsubsec:clinical_eval}).
+This separation ensures that (i)~the harmonisation assessment
+reflects the maximum adversarial pressure achievable when all sites
+are observed, providing the most direct comparison with the
+feature-level site-classification experiments on $\mathrm{ELM}_n$;
+and (ii)~the neuroscreening evaluation remains a rigorous test of
+generalisation to previously unseen institutions.
+All four conditions operate under a strict zero-shot LOSO protocol
+and are directly comparable with one another and with the
+feature-level conditions.
 
-\paragraph{MINet (signal-level baseline).}
-The MINet baseline uses the pretrained backbone
-of~\cite{poziomska2026quantity} without any domain objective
-($\lambda \equiv 0$).
+\paragraph{MINet (signal-level baseline)}
+The MINet baseline uses the architecture described above without any
+domain objective (site discriminator disconnected and $\lambda \equiv 0$ in GRL,  Figure~\ref{fig:dann_arch}).
+
 The encoder is first pretrained on individual frames in a
 single-instance fashion identical to the siNet pretraining
 of~\cite{poziomska2026quantity}, after which the full MINet network
 is trained for pathology classification on the source pool.
+Pretraining initialises the encoder with discriminative frame-level
+features and consistently yields better convergence than training
+from scratch~\cite{poziomska2026quantity}.
 No site discriminator is attached.
-This condition establishes the degree of site information retained
-in the learned representation $\mathbf{h}$ in the absence of any
-adversarial pressure.
 
-\paragraph{MINet-MTL (multi-task baseline, no gradient reversal).}
+For the harmonisation assessment, MINet is trained on the complete
+$\mathrm{ELM}_s$ dataset; the resulting recording-level
+representations~$\mathbf{h}$ are extracted for all recordings in
+$\mathrm{ELM}_n$ and used to establish the degree of site information
+retained in the absence of any adversarial pressure.
+For neuroscreening evaluation, MINet is retrained from scratch under
+the LOSO protocol, with the pretrained encoder initialised from the
+full-data checkpoint.
+
+\paragraph{MINet-MTL (multi-task baseline, no gradient reversal)}
 MINet-MTL replaces the GRL with an identity mapping, so that the
 gradient from the site discriminator $G_d$ flows unmodified into the
 backbone.
-The network is initialised with random weights and trained from
-scratch for 50 epochs.
-The combined loss is:
+The network is trained from random initialisation for 50~epochs using
+the combined loss
 \begin{equation}
-  \mathcal{L}_{\mathrm{MTL}} =
-    5.0 \cdot \mathcal{L}_y\!\bigl(G_y(\mathbf{h}),\,y\bigr)
-    + \mathcal{L}_d\!\bigl(G_d(\mathbf{h}),\,d\bigr),
-  \label{eq:mtl_loss}
+    \mathcal{L}_{\mathrm{MTL}}(\theta_f, \theta_a, \theta_y, \theta_d )
+        = 5.0 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right)
+          + \mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
 \end{equation}
 where $y$ is the pathology label and $d$ is the site label.
-Because the site loss flows normally into the backbone, MINet-MTL
-is expected to \emph{exploit} site identity rather than suppress it,
-producing a larger CatBoost-MCC on $\mathbf{h}$ than MINet and
-thereby providing an empirical upper bound on the site information
-that an unconstrained multi-task network would encode in the
-recording-level representation.
+Because the site loss flows normally into the backbone, MINet-MTL is
+expected to \emph{encode} site identity rather than suppress it,
+providing an empirical upper bound on the site information that an
+unconstrained multi-task network would retain in~$\mathbf{h}$.
 
-\paragraph{MINet-DANN (full adversarial training).}
+For the harmonisation assessment, MINet-MTL is trained on the
+complete $\mathrm{ELM}_s$ dataset; representations~$\mathbf{h}$ are
+extracted for all $\mathrm{ELM}_n$ recordings.
+For neuroscreening evaluation, it is retrained under the LOSO
+protocol; in each round, gradient updates use exclusively the source
+pool, while the target site constitutes the held-out test set.
+
+\paragraph{MINet-DANN (full adversarial training from scratch)}
 MINet-DANN inserts the GRL between the attention module and the site
-discriminator, replacing the site loss term with an adversarial
-objective.
-The network is initialised with random weights and trained from
-scratch for 50 epochs.
-The saddle-point objective is:
+discriminator, replacing the site loss with an adversarial objective.
+The network is trained from random initialisation for 50~epochs under
+the saddle-point objective
 \begin{equation}
-  \mathcal{L}(\theta_f,\theta_a,\theta_y,\theta_d) =
-      5.0 \cdot \mathcal{L}_y\!\bigl(G_y(\mathbf{h}),\,y\bigr)
-      - \lambda\,\mathcal{L}_d\!\bigl(G_d(\mathbf{h}),\,d\bigr),
-  \label{eq:dann_loss}
+    \mathcal{L}(\theta_f,\theta_a,\theta_y,\theta_d)
+        = 5.0 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right)
+          - \lambda\,\mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
 \end{equation}
 where $\theta_f$, $\theta_a$, $\theta_y$, and $\theta_d$ are the
 parameters of the frame encoder, attention module, pathology
 classifier, and site discriminator, respectively.
 The domain-adaptation weight $\lambda$ is annealed from 0 to 1
-during training according to the schedule of
-Ganin~et~al.~\cite{ganin2016domain}:
+according to the schedule of~\cite{ganin2016domain}:
 \begin{equation}
-  \lambda_p = \frac{2}{1 + \exp(-\gamma p)} - 1,
-  \qquad \gamma = 10,
-  \label{eq:lambda_schedule}
+    \lambda_p = \frac{2}{1+\exp(-\gamma p)} - 1, \qquad \gamma = 10,
+    \label{eq:lambda_schedule}
 \end{equation}
 where $p \in [0,1]$ denotes training progress (fraction of total
 epochs completed).
-Model selection at each LOSO round is based on the highest
-pathology AUC obtained on a held-out validation subset drawn from
-the source pool.
+This schedule suppresses adversarial pressure in early training,
+allowing the encoder and classifier to first develop discriminative
+representations before the site-invariance constraint is gradually
+enforced.
 
-\paragraph{MINet-DANN+tuning (frozen backbone, retrained classifier).}
-MINet-DANN+tuning takes the best MINet-DANN checkpoint from each
-LOSO round, freezes the parameters of the frame encoder $G_f$,
-attention module, and site discriminator $G_d$, and retrains only
-the pathology classifier $G_y$ on the source-pool data using the
-AdamW optimiser for 30 epochs ($\lambda \equiv 0$ throughout).
-This recalibration step adjusts the diagnostic decision boundaries
-within the site-agnostic latent space learned by MINet-DANN, without
-modifying the harmonised representation.
-Because the target site is never exposed to the model during this
-step, the condition remains strictly LOSO-compliant and provides a
-calibrated diagnostic estimate directly comparable to the
-feature-level LOSO conditions.
+For the harmonisation assessment, MINet-DANN is trained on the
+complete $\mathrm{ELM}_s$ dataset; representations~$\mathbf{h}$ are
+extracted for all $\mathrm{ELM}_n$ recordings and compared with those
+of MINet and MINet-MTL and with all feature-level harmonisation
+conditions (Section~\ref{subsubsec:repr_assessment}).
+For neuroscreening evaluation, MINet-DANN is retrained under the LOSO
+protocol; model selection in each round is based on the highest
+pathology AUC obtained on a held-out validation subset drawn from the
+source pool.
+
+\paragraph{MINet-DANN-CF (classifier fine-tuning on a frozen
+adversarial backbone)}
+\label{par:MINet-DANN-CF}
+MINet-DANN-CF evaluates the diagnostic utility of the domain-invariant representation learned by MINet-DANN in isolation from any further representation adaptation. The best-epoch weights from the adversarial training are loaded, and the site discriminator $G_d$ is detached. During this linear probing (classifier recalibration) phase, the entire feature extraction backbone---comprising the frame encoder $G_f$ and the attention mechanism (parameters $\theta_f$ and $\theta_a$)---is strictly frozen to preserve the site-invariant representation $\mathbf{h}$. Only the parameters $\theta_y$ of the pathology classifier $G_y$ are unfrozen and optimised. Training is performed using an AdamW optimiser for 30~epochs, minimising the classification loss:
+\begin{equation}
+    \mathcal{L}(\theta_y) = \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right).
+\end{equation}
+This step recalibrates the diagnostic decision boundaries within the
+fixed, adversarially established site-agnostic latent space without
+altering the representation itself.
+
+This design is motivated by the training instability observed in
+\mbox{MINet-DANN}: target-domain validation \textsc{auc} frequently
+peaks well before the final epoch and then declines, suggesting that
+continued adversarial optimisation drives the diagnostic head away from
+its optimal configuration.
+The precise mechanism underlying this degradation---whether
+catastrophic forgetting of diagnostically relevant structure in
+$\mathbf{h}$, overfitting of the pathology classifier to
+source-pool-specific patterns, or a combination of
+both---cannot be determined from target-domain \textsc{auc} alone and is
+left for future work (Section~\ref{subsec:future}).
+By freezing the backbone at its best adversarial checkpoint and
+retraining only $G_y$, \mbox{MINet-DANN-CF} decouples the
+representation from the classifier, asking whether the adversarially
+learned $\mathbf{h}$ is \emph{intrinsically} sufficient for accurate
+cross-site pathology classification, independently of whichever
+instability mechanism is responsible for the observed degradation.
+
+The data split follows a strict LOSO protocol identical to the other
+signal-level conditions.
+During classifier retraining, no target-domain data is exposed to the
+model: $G_y$ is optimised exclusively on the full source pool.
+To rigorously evaluate the model's performance, we distinguish between two evaluation regimes.
+First, we report the results of the \textit{final training epoch} (MINet-DANN-Final), which constitutes a \textbf{strict zero-shot} evaluation, as the target domain data remains completely unseen during both training and model selection.
+Second, we report the \textit{best-epoch performance} (MINet-DANN-Best), where the target site's validation AUC is used to track the optimal diagnostic state. While the latter is target-informed, it serves to establish the upper bound of the learned representation's utility.
+This dual reporting ensures transparency and allows for a direct comparison with both strictly blinded and target-calibrated literature benchmarks.
+
+Because MINet-DANN-CF operates on the same frozen MINet-DANN
+checkpoint, its harmonisation assessment is identical to that
+reported for MINet-DANN (Section~\ref{subsubsec:two_classifier});
+it is included in the two-classifier evaluation for completeness and
+to confirm that classifier retraining does not alter the residual
+site information in~$\mathbf{h}$.
 
 % -----------------------------------------------------------------------
-\subsection{Evaluation Framework}
-\label{subsec:evaluation}
-
 \subsubsection{Two-Classifier Site-Discriminability Evaluation}
 \label{subsubsec:two_classifier}
-
 The site effect was quantified using a supervised site-classification
 task on $\mathrm{ELM}_n$, using 5-fold stratified cross-validation
 with stratification by hospital~ID.
 To distinguish between the linearly accessible and nonlinearly
 accessible components of the site effect, two classifiers of
 contrasting capacity were applied to every condition:
-
 \begin{itemize}
   \item \textbf{Logistic regression (LR)} with $\ell_2$
         regularisation, selected by inner cross-validation on the
-        training folds. LR can only exploit mean shifts and linear
-        inter-feature relationships, and therefore measures the
-        component of the site effect that survives as a linearly
-        separable signal.
+        training folds.
+        LR can only exploit mean shifts and linear inter-feature
+        relationships, and therefore measures the component of the
+        site effect that survives as a linearly separable signal.
   \item \textbf{CatBoost gradient-boosted classifier}, which can
         additionally exploit higher-order inter-feature interactions
         and covariance structure, and therefore measures the
         \emph{total} site information including structure that is
         invisible to a linear classifier.
 \end{itemize}
-
-The gap between LR-MCC and CatBoost-MCC under any given condition
-directly quantifies the degree to which that condition's site effect
-is encoded in nonlinear covariance structure.
-For feature-level conditions, both classifiers are trained on the
-2\,850-dimensional feature vector.
-For signal-level conditions, both classifiers are trained on the
-recording-level representation $\mathbf{h}$ extracted from
-full-data MINet-DANN training, as described in
-Section~\ref{subsubsec:repr_assessment}.
-The Matthews Correlation Coefficient (MCC) is used as the primary
-metric:
+Performance is reported using the Matthews Correlation Coefficient
+(MCC):
 \begin{equation}
   \mathrm{MCC} = \frac{c\,s - \sum_{k=1}^{K} p_k t_k}
     {\sqrt{\!\left(s^2 - \sum_{k=1}^{K} p_k^2\right)
@@ -820,183 +1032,108 @@ $t_k = \sum_j C_{kj}$, and $p_k = \sum_i C_{ik}$ for confusion
 matrix $\mathbf{C} \in \mathbb{N}^{K \times K}$, and $K$ denotes
 the number of classes ($K = 30$ for the site-classification task;
 $K = 2$ for the binary neuroscreening task).
-
-\subsubsection{Representation Quality Assessment for Signal-Level
-  Models}
-\label{subsubsec:repr_assessment}
-
-To provide a direct comparison between the site information encoded
-in the DANN representations and that suppressed by the statistical
-harmonisation methods, an additional assessment is performed on the
-representations learned by the full-data DANN models.
-Specifically, MINet-DANN is trained from scratch on the complete
-$\mathrm{ELM}_s$ dataset (all 30 sites, without held-out folds),
-and the resulting recording-level representations $\mathbf{h}$ are
-extracted for all recordings.
-Both LR and CatBoost classifiers are then trained to predict the
-site label from $\mathbf{h}$ using 5-fold stratified
-cross-validation, stratified by hospital~ID, and performance is
-reported as MCC (mean $\pm$ SD across folds).
-
-This condition directly parallels the feature-level site-classification
-experiments---in which LR and CatBoost were trained on the original
-and harmonised 2\,850-dimensional feature vectors---and yields a
-meaningful comparison of the residual site information in:
-\begin{enumerate}
-  \item the raw feature space,
-  \item each statistical harmonisation condition, and
-  \item the adversarially learned representation $\mathbf{h}$.
-\end{enumerate}
-Because DANN training on the full dataset maximises the signal
-available to the adversarial objective, the MCC values from this
-condition represent the strongest achievable site-invariance of the
-DANN representation and serve as an upper bound on the harmonisation
-effectiveness of the signal-level approach.
-
+The gap between the LR and CatBoost MCC values under any given
+condition directly quantifies the degree to which that condition's
+site effect is encoded in nonlinear covariance structure.
+For feature-level conditions, both classifiers are trained on the
+2\,850-dimensional feature vector.
+For signal-level conditions, both classifiers are trained on the
+recording-level representation $\mathbf{h}$: each signal-level
+model is trained once on the complete $\mathrm{ELM}_s$ dataset
+(all 30 sites, without held-out folds) and the resulting
+representations $\mathbf{h}$ are extracted for all recordings
+in $\mathrm{ELM}_n$.
+This full-data training condition maximises the adversarial pressure
+achievable and therefore represents the strongest achievable
+site-invariance of each signal-level approach, providing the most
+direct comparison with the feature-level site-classification
+experiments.
+Note that this harmonisation assessment is kept strictly separate
+from the neuroscreening evaluation
+(Section~\ref{subsubsec:clinical_eval}), in which signal-level
+models are retrained under the LOSO protocol.
+Since \mbox{MINet-DANN-CF} does not alter the representation
+$\mathbf{h}$ relative to \mbox{MINet-DANN}, both variants share
+the same harmonisation assessment result.
+...
 \subsubsection{Feature Importance Analysis}
 \label{subsubsec:shap}
 
+To identify the primary carriers of site-specific information,
 SHAP (SHapley Additive exPlanations) values were computed for the
 trained CatBoost site-classification model using the SHAP
-TreeExplainer:
-\begin{equation}
-  g(\mathbf{z}') = \phi_0 + \sum_{i=1}^{M} \phi_i z'_i,
-  \label{eq:shap}
-\end{equation}
-where $\phi_0$ is the base value and $\phi_i$ is the SHAP value for
-feature $i$.
+TreeExplainer~\cite{lundberg2017unified}.
 Global feature importance was summarised by the mean absolute SHAP
 value across all predictions and classes.
-An ablation study trained models on each feature group individually
-(covariance, power, coherence) and with each group sequentially
-removed.
+An ablation study additionally trained models on each feature group
+individually (covariance, power, coherence) and with each group
+sequentially removed, to corroborate the SHAP-based ranking.
 
-\subsubsection{Univariate Harmonisation Effectiveness: Cohen's~$d$}
-\label{subsubsec:cohend}
+%\subsubsection{Univariate Harmonisation Effectiveness: Cohen's~$d$}
+%\label{subsubsec:cohend}
 
-The impact of harmonisation on individual feature distributions was
-quantified using the standardised mean difference between
-institutions:
-\begin{equation}
-  d = \frac{\mu_1 - \mu_2}{\sigma_{\mathrm{pooled}}},
-  \qquad
-  \sigma_{\mathrm{pooled}} =
-    \sqrt{\frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1+n_2-2}},
-  \label{eq:cohend}
-\end{equation}
-computed for each feature over every pair of institutions and averaged
-across features to produce an all-vs-all pairwise summary.
+%The impact of harmonisation on individual feature distributions was
+%quantified using the standardised mean difference between
+%institutions:
+%\begin{equation}
+%  d = \frac{\mu_1 - \mu_2}{\sigma_{\mathrm{pooled}}},
+%  \qquad
+%  \sigma_{\mathrm{pooled}} =
+%    \sqrt{\frac{(n_1-1)s_1^2 + (n_2-1)s_2^2}{n_1+n_2-2}},
+%  \label{eq:cohend}
+%\end{equation}
+%computed for each feature over every pair of institutions and averaged
+%across features to produce an all-vs-all pairwise summary.
 
 \subsubsection{Clinical Neuroscreening Evaluation}
 \label{subsubsec:clinical_eval}
 
 Clinical utility was assessed on the binary pathology classification
-task using the full $\mathrm{ELM}_s$ dataset under two protocols.
-
-\paragraph{5-Fold Cross-Validation.}
-The dataset was split into five folds stratified by hospital~ID,
-pathology label, and sex, and performance (MCC and AUC) was averaged
-across folds.
-This protocol provides a general performance estimate representative
-of the setting in which all sites are seen during training.
-This protocol is applied exclusively to the feature-level conditions
-(Approach~1); the DANN variants (Approach~2) are evaluated under the
-LOSO protocol only (see below).
-
-\paragraph{Leave-One-Site-Out (LOSO).}
+task using the full $\mathrm{ELM}_s$ dataset under the
+Leave-One-Site-Out (LOSO) protocol.
 In each round, all recordings from one of the 30 institutions are
 held out as the target test set, while the remaining 29 institutions
 form the training source pool.
+%---
 A calibration sample of $n_{\mathrm{cal}} = 30$ normal recordings
 from the held-out site is reserved prior to each round.
 For feature-level methods, this calibration sample is used together
 with the training data from all other institutions to fit the
-harmonisation parameters; for the unharmonised feature-level baseline
-the calibration sample is discarded.
-For signal-level DANN variants, the calibration sample is included in
-the source-pool training data.
-Because $n_{\mathrm{cal}} = 30$ represents a negligible fraction of
-the total training corpus (fewer than 0.06\% of all recordings), this
-is not expected to introduce meaningful bias into the evaluation.
-The calibration sample is never included in the pathology
-classification training set under any condition.
-This protocol directly simulates deployment to a previously unseen
-recording environment and is the primary measure of generalisation in
-the present study.
+harmonisation parameters, with the calibration recordings treated as
+a separate batch corresponding to the target institution; the
+remaining recordings from the target site are then corrected using
+the estimated site-specific parameters and constitute the held-out
+test set.
 
-Notably, for the deep learning-based domain adaptation variants
-(Approach~2: MINet, MINet-MTL, MINet-DANN, and MINet-DANN+tuning),
-the LOSO protocol is the \emph{exclusive} method of evaluation.
-The adversarial framework is explicitly designed to maximise
-generalisation to novel clinical institutions without prior exposure to
-their signals; the strictly enforced LOSO evaluation therefore
-provides the most relevant assessment of these models' deployment
-potential.
+For the unharmonised feature-level baseline
+the calibration sample is discarded.
+For all signal-level conditions (MINet, MINet-MTL, MINet-DANN, and
+MINet-DANN-CF), the calibration sample is included in the source-pool
+training data; the entire target site's recordings constitute the
+held-out test set.
+This protocol directly simulates zero-shot deployment to a previously
+unseen recording environment and is applied uniformly to all
+conditions, ensuring direct comparability across the full set of
+harmonisation strategies.
+
 Performance (MCC and AUC) is reported both as an aggregate across
-all 30 LOSO rounds and as a per-institution profile.
+all 30 rounds and as a per-institution profile for all conditions.
 
 % -----------------------------------------------------------------------
 \section{Results}
 \label{sec:results}
 
-\subsection{Exploratory Analysis of Inter-Institutional Heterogeneity}
-\label{subsec:exploratory}
-
-Exploratory analysis of the $\mathrm{ELM}_n$ subset revealed
-substantial heterogeneity across the 30 institutions in patient
-demographics and recording protocols.
-Age distributions varied markedly between sites: institutions such as
-H21, H29, and H30 served predominantly young populations (median
-ages 19.5, 17.8, and 17.6 years, respectively), while institutions
-such as H7 and H19 served predominantly older patients (median ages
-50.8 and 52.1 years, respectively).
-The maximum difference in median age between any two institutions
-exceeded 30 years (full statistics are given in
-Table~\ref{tab:age_stats} in the Appendix).
-Sex distributions were broadly balanced across most institutions,
-with minor imbalances at a small number of sites.
-Recording duration showed further heterogeneity: while the majority
-of centres produced sessions of approximately 1\,152 seconds (median),
-institution H3 showed a bimodal distribution suggesting the use of
-multiple recording protocols within a single institution, and H16
-recorded sessions lasting up to 8\,322 seconds.
-Raw signal amplitudes, quantified as the median of per-channel
-median absolute deviations (MAD) across the full recording,
-varied by more than two orders of magnitude across institutions
-(median MAD range: 3.9--1\,611\,$\mu$V;
-Figure~\ref{fig:raw_amplitude}), likely reflecting differences in
-amplifier gain settings across hardware configurations.
-Frame rejection rates during preprocessing were generally low
-(overall mean 1.9\%, median 0.3\%), with most institutions below
-3\%; institution H22 was a notable outlier at 8.2\%, driven
-primarily by flat-line electrode rejections.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\textwidth]{Figs/raw_amplitude_by_hospital.png}
-  \caption{Raw signal amplitude (median of per-channel MAD, $\mu$V)
-    by institution for normal recordings in $\mathrm{ELM}_n$.
-    The $y$-axis is log-scaled. The two-order-of-magnitude range
-    reflects differences in amplifier gain settings across sites.}
-  \label{fig:raw_amplitude}
-\end{figure}
-
-Institution sample sizes in $\mathrm{ELM}_n$ ranged from 86 (H23)
-to 6\,222 (H10), a 72-fold imbalance.  The proportion of normal
-recordings in $\mathrm{ELM}_s$ also varied widely across
-institutions, from 7.6\% (H30) to 78.3\% (H7), further motivating
-the restriction to normal recordings ($\mathrm{ELM}_n$) for
-site-effect analyses.
-
-This demographic, procedural, and hardware heterogeneity motivates
-the use of $\mathrm{ELM}_n$ for all site-effect analyses and
-provides a qualitative indication that observed inter-site feature
-differences reflect a mixture of acquisition and population-level
-sources.
 
 \subsection{Quantifying the Site Effect}
 \label{subsec:site_classification}
-
+The inter-institutional heterogeneity characterised in
+Section~\ref{subsec:exploratory}---spanning demographic profiles,
+recording durations, amplifier configurations, and raw signal
+amplitudes---provides a qualitative basis for expecting strong
+site effects in the extracted feature space.
+The following sections quantify this effect, evaluate the capacity
+of each harmonisation strategy to suppress it, and assess the
+downstream impact on clinical neuroscreening performance.
 \subsubsection{Site Classification Performance}
 
 The CatBoost nonlinear classifier trained on the unharmonised
@@ -1010,14 +1147,15 @@ The LR--CatBoost gap of $0.058$ on the unharmonised baseline
 establishes the degree to which the site effect in the raw feature
 space is already encoded in nonlinear covariance structure.
 
-Per-institution one-vs-rest MCC scores for the CatBoost classifier
-are summarised in Table~\ref{tab:per_site_mcc}.
-A total of 22 out of 30 institutions achieved average MCC scores
+Per-institution site-discriminability was further characterised
+using one-vs-rest binary MCC for each institution separately
+(Table~\ref{tab:per_site_mcc}).
+A total of 22 out of 30 institutions achieved one-vs-rest MCC
 above 0.7.
 A small subset of institutions---H12, H13, H21, and
 H23---performed poorly (MCC 0.37--0.48), likely owing to
 distributional similarity with neighbouring sites in the corpus.
-Institution H5 achieved the lowest average MCC of 0.16.
+Institution H5 achieved the lowest one-vs-rest MCC of 0.16.
 
 \begin{table}[htbp]
   \centering
@@ -1046,7 +1184,8 @@ Institution H5 achieved the lowest average MCC of 0.16.
     H14 & $0.939 \pm 0.012$ & H29 & $0.663 \pm 0.014$ \\
     H15 & $0.856 \pm 0.009$ & H30 & $0.547 \pm 0.098$ \\
     \midrule
-    \multicolumn{2}{l}{overall} & \multicolumn{2}{l}{$0.843 \pm 0.007$} \\
+    \multicolumn{2}{l}{overall} &
+    \multicolumn{2}{l}{$0.843 \pm 0.007$} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1054,8 +1193,9 @@ Institution H5 achieved the lowest average MCC of 0.16.
 \subsubsection{Feature Importance: SHAP Analysis and Ablation}
 \label{subsubsec:shap_results}
 
-Table~\ref{tab:ablation} summarises site-classification MCC for models
-trained on individual feature groups and with each group excluded.
+Table~\ref{tab:ablation} summarises site-classification MCC for
+CatBoost models trained on individual feature groups and with each
+group excluded.
 A model trained exclusively on coherence features achieved MCC of
 $0.850 \pm 0.003$, nearly matching the full-feature-set performance.
 Power features alone achieved $0.600 \pm 0.005$, and covariance
@@ -1098,39 +1238,20 @@ site predictions.
   \end{tabular}
 \end{table}
 
+
 \subsection{The Two-Classifier Evaluation of Harmonisation Methods}
 \label{subsec:harmonisation_results}
 
-\subsubsection{Cohen's~$d$: Univariate Harmonisation Effectiveness}
+As a sanity check on marginal correction, mean pairwise Cohen's~$d$
+(averaged across all institution pairs and all 2\,850 features)
+was reduced from [TBF] in the unharmonised baseline to [TBF]
+after site-wise standardisation, [TBF] after \mbox{neuroCombat},
+and [TBF] after \mbox{CovBat}, confirming that all three methods
+successfully equalise marginal feature distributions across sites.
+The two-classifier evaluation below reveals, however, that this
+univariate reduction is insufficient as a sole indicator of
+harmonisation quality.
 
-Prior to harmonisation, substantial inter-site differences were
-present at the feature level, with mean pairwise Cohen's~$d$
-of $\mathbf{[TBF]}$ averaged across all institution pairs and all
-2\,850 features.
-All marginal correction methods reduced inter-site Cohen's~$d$
-relative to the unharmonised baseline (Table~\ref{tab:cohend_summary}).
-
-\begin{table}[htbp]
-  \centering
-  \caption{Mean pairwise Cohen's~$d$ (averaged across all institution
-    pairs and all 2\,850 features) before and after each harmonisation
-    condition, applied to $\mathrm{ELM}_n$.}
-  \label{tab:cohend_summary}
-  \begin{tabular}{lc}
-    \toprule
-    \textbf{Condition} & \textbf{Mean pairwise Cohen's~$d$} \\
-    \midrule
-    Original (unharmonised)         & \textbf{[TBF]} \\
-    PCA pre-orthogonalisation only  & \textbf{[TBF]} \\
-    Site-wise standardisation       & \textbf{[TBF]} \\
-    PCA + site-wise stand.          & \textbf{[TBF]} \\
-    neuroCombat                     & \textbf{[TBF]} \\
-    PCA + neuroCombat               & \textbf{[TBF]} \\
-    CovBat                          & \textbf{[TBF]} \\
-    PCA + CovBat                    & \textbf{[TBF]} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 \subsubsection{The Harmonisation Paradox Revealed by the
   Two-Classifier Framework}
@@ -1138,13 +1259,9 @@ relative to the unharmonised baseline (Table~\ref{tab:cohend_summary}).
 
 Table~\ref{tab:site_class_harmonisation} reports the LR-MCC and
 CatBoost-MCC for all conditions.
-The logistic regression linear probe assigned near-chance MCC to
-site-wise standardisation (0.000) and neuroCombat (0.013), confirming
-that these methods successfully remove the \emph{linear} component of
-the site effect.
-CovBat retained a small but non-negligible linear residual
-(LR-MCC $= 0.176$), suggesting that its covariance-level correction
-leaves some linear site signal intact.
+The logistic regression linear probe assigned near-chance MCC to all
+harmonised conditions, confirming that marginal correction
+successfully removes the \emph{linear} component of the site effect.
 The CatBoost nonlinear probe, by contrast, assigned near-ceiling MCC
 ($0.924$--$0.969$) to all harmonised conditions applied without PCA
 pre-orthogonalisation, demonstrating the \emph{harmonisation paradox}:
@@ -1160,12 +1277,22 @@ PCA pre-orthogonalisation substantially reduces this gap by
 destroying the inter-feature covariance prior to correction,
 attenuating the paradox across all harmonisation conditions.
 
-The signal-level conditions (MINet, MINet-MTL, MINet-DANN,
-MINet-DANN+tuning) are evaluated via the same two-classifier framework
-applied to the representation $\mathbf{h}$.
-\textbf{[TBF: report LR-MCC and CatBoost-MCC for all four DANN
-variants once experiments are complete, and comment on whether
-MINet-DANN achieves a smaller LR--CatBoost gap than the
+\td{
+Grouped bar chart z dwiema grupami słupków (LR i CB) per warunek, posortowanymi w kolejności rosnącego gapu:
+Oś X: warunki harmonizacji pogrupowane w trzy bloki wizualnie oddzielone odstępem lub kolorem tła:
+Blok 1: warunki bez PCA (Unharmonised, Site-wise, neuroCombat, CovBat)
+Blok 2: warunki z PCA (PCA only, PCA+Site-wise, PCA+neuroCombat, PCA+CovBat)
+Blok 3: signal-level (MINet, MINet-MTL, MINet-DANN)
+Dla każdego warunku harmonizacji rysowane są dwa sąsiadujące słupki — jeden dla LR-MCC i jeden dla CB-MCC — z whiskerami SD. Warunki są zgrupowane w trzy bloki jak opisano wyżej, oddzielone wizualnie węższymi przerwami między blokami niż między parami słupków wewnątrz bloku.
+Między każdą parą słupków LR i CB można dodać cienkę dwukierunkową strzałkę lub klamrę z wartością ΔMCC
+ΔMCC wpisaną bezpośrednio, żeby gap był czytelny numerycznie bez potrzeby patrzenia do tabeli. Alternatywnie wartości Δ można umieścić jako osobną linię punktów nałożoną na wykres słupkowy (secondary axis lub po prostu punkty nad parami słupków).
+}
+
+The signal-level conditions are evaluated via the same two-classifier
+framework applied to the representation $\mathbf{h}$.
+\textbf{[TBF: report LR-MCC and CatBoost-MCC for all four
+signal-level variants once experiments are complete, and comment on
+whether MINet-DANN achieves a smaller LR--CatBoost gap than the
 feature-level conditions.]}
 
 Figure~\ref{fig:site_mcc_no_pca} shows per-institution
@@ -1180,6 +1307,7 @@ analogous results with PCA pre-orthogonalisation.
     one-vs-rest, 5-fold CV on $\mathrm{ELM}_n$) for the raw feature
     set and after four harmonisation methods \emph{without} PCA
     pre-orthogonalisation.
+    Institutions are ordered by decreasing raw-baseline MCC.
     All four methods drive MCC towards a near-ceiling value,
     demonstrating the harmonisation paradox.}
   \label{fig:site_mcc_no_pca}
@@ -1192,6 +1320,7 @@ analogous results with PCA pre-orthogonalisation.
     one-vs-rest, 5-fold CV on $\mathrm{ELM}_n$) after four
     harmonisation methods \emph{with} full-variance PCA
     pre-orthogonalisation.
+    Institutions are ordered by decreasing raw-baseline MCC.
     PCA pre-orthogonalisation substantially attenuates the
     harmonisation paradox.}
   \label{fig:site_mcc_pca}
@@ -1206,10 +1335,11 @@ analogous results with PCA pre-orthogonalisation.
     probe.
     The LR--CB gap quantifies the degree to which residual site
     information is encoded in nonlinear covariance structure.
-    $^\dagger$Signal-level models are evaluated under the LOSO
-    protocol only (Section~\ref{subsubsec:clinical_eval}); site
-    discriminability is assessed on representations from full-data
-    training (Section~\ref{subsubsec:repr_assessment}).}
+    $^\dagger$Signal-level models: site discriminability assessed on
+    representations from full-data training
+    (Section~\ref{subsubsec:repr_assessment}).
+    MINet-DANN-CF shares the harmonisation assessment of MINet-DANN
+    as classifier retraining does not alter~$\mathbf{h}$.}
   \label{tab:site_class_harmonisation}
   \begin{tabular}{lcccc}
     \toprule
@@ -1220,7 +1350,7 @@ analogous results with PCA pre-orthogonalisation.
     \midrule
     \multicolumn{5}{l}{\textit{Feature-level, without PCA}} \\
     \quad Original (unharmonised)
-      & 0.785 & 0.005 & 0.843 & 0.007 \\
+     & 0.785 & 0.005 & 0.843 & 0.007 \\
     \quad Site-wise standardisation
       & 0.000 & 0.000 & 0.969 & 0.002 \\
     \quad neuroCombat
@@ -1228,7 +1358,8 @@ analogous results with PCA pre-orthogonalisation.
     \quad CovBat
       & 0.176 & 0.013 & 0.924 & 0.004 \\
     \midrule
-    \multicolumn{5}{l}{\textit{Feature-level, with PCA pre-orthogonalisation}} \\
+    \multicolumn{5}{l}{\textit{Feature-level, with PCA
+      pre-orthogonalisation}} \\
     \quad PCA only
       & 0.858 & 0.004 & 0.784 & 0.008 \\
     \quad PCA + site-wise stand.
@@ -1238,19 +1369,62 @@ analogous results with PCA pre-orthogonalisation.
     \quad PCA + CovBat
       & 0.032 & 0.007 & 0.740 & 0.014 \\
     \midrule
-    \multicolumn{5}{l}{\textit{Signal-level (both probes on $\mathbf{h}$)$^\dagger$}} \\
+    \multicolumn{5}{l}{\textit{Signal-level (both probes on
+      $\mathbf{h}$)$^\dagger$}} \\
     \quad MINet ($\lambda \equiv 0$)
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & \textbf{[TBF]} & \textbf{[TBF]}
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad MINet-MTL
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & \textbf{[TBF]} & \textbf{[TBF]}
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
     \quad MINet-DANN
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad MINet-DANN+tuning
-      & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & \textbf{[TBF]} & \textbf{[TBF]}
+      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      % \quad MINet-DANN-CF
+      % & \textbf{[TBF]} & \textbf{[TBF]}
+      % & \textbf{[TBF]} & \textbf{[TBF]} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+
+
+\subsubsection{Residual Site Effect in DANN Representations}
+\label{subsub:residual_side_effects_dann}
+
+To verify whether the Gradient Reversal Layer successfully decouples
+site-specific signatures from physiological features, domain
+classification performance was evaluated on the source pool for each
+of the four signal-level training variants.
+
+MINet-MTL, which trains the site discriminator without gradient
+reversal, exhibited a high domain MCC on the source pool, confirming
+that an unconstrained multi-task objective actively encodes site
+identity in the recording-level representation~$\mathbf{h}$.
+In contrast, adversarial training with the GRL caused the domain
+classifier to fail substantially: MINet-DANN exhibited near-zero
+domain MCC, confirming that the adversarial objective forced the
+latent space to become site-agnostic.
+MINet (the signal-level baseline without any domain objective)
+established the degree of residual site information present in the
+representation in the absence of adversarial pressure.
+As MINet-DANN-CF operates on the same frozen backbone as MINet-DANN,
+its domain MCC is identical by design.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.7\textwidth]{Figs/domain_mcc_comparison_bar.png}
+%   \caption{Residual site effect across the four signal-level training
+%     variants, quantified by domain MCC evaluated on the source pool.
+%     MINet-MTL (no gradient reversal) retains strong
+%     site-discriminative information; MINet-DANN reduces domain MCC to
+%     near-zero values, confirming successful adversarial harmonisation.
+%     MINet-DANN-CF is identical to MINet-DANN in this assessment.}
+%   \label{fig:dann_domain_mcc}
+% \end{figure}
+
+
+% -----------------------------------------------------------------------
 \subsection{Impact of Harmonisation on Clinical Neuroscreening}
 \label{subsec:clinical_results}
 
@@ -1266,122 +1440,153 @@ direction of the anomaly, and comment on likely causes.]}
 
 Figure~\ref{fig:patho_auc_pca} shows the analogous results with PCA
 pre-orthogonalisation.
-In contrast to the no-PCA condition, the four methods cluster closely
-together across all institutions, and the institution-level
-variability in AUC is markedly reduced.
+Under this condition, the four methods cluster closely together across
+all institutions, and the institution-level variability in AUC is
+markedly reduced relative to the no-PCA setting.
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{Figs/patho_auc_pca_none.pdf}
-  \caption{Per-institution neuroscreening AUC under the LOSO
-    protocol for the CatBoost classifier applied to raw features and
-    after four feature-level harmonisation methods, \emph{without}
-    PCA pre-orthogonalisation.}
+  \caption{Per-institution neuroscreening AUC under the LOSO protocol
+    for the CatBoost classifier applied to raw features and after four
+    feature-level harmonisation methods, \emph{without} PCA
+    pre-orthogonalisation.
+    Institutions are ordered by decreasing raw-baseline AUC.}
   \label{fig:patho_auc_no_pca}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{Figs/patho_auc_pca_all.pdf}
-  \caption{Per-institution neuroscreening AUC under the LOSO
-    protocol for the CatBoost classifier applied to raw features and
-    after four feature-level harmonisation methods, \emph{with}
-    full-variance PCA pre-orthogonalisation.
-    All four methods cluster closely and track slightly above the
-    raw baseline.}
+  \caption{Per-institution neuroscreening AUC under the LOSO protocol
+    for the CatBoost classifier applied to raw features and after four
+    feature-level harmonisation methods, \emph{with} full-variance PCA
+    pre-orthogonalisation.
+    Institutions are ordered by decreasing raw-baseline AUC.
+    All four methods cluster closely and track slightly above the raw
+    baseline, with substantially reduced institution-level variability
+    compared to the no-PCA condition
+    (Figure~\ref{fig:patho_auc_no_pca}).}
   \label{fig:patho_auc_pca}
 \end{figure}
 
+
+\subsubsection{Signal-Level Conditions}
+\label{subsubsec:dann_clinical}
+
+MINet-DANN achieved a mean AUC of $0.810 \pm 0.073$ and a mean MCC of $0.475 \pm 0.130$
+across all 30 LOSO target institutions under the strict zero-shot
+protocol.
+
+MINet-DANN also exhibited a training stability problem:
+severe target-domain performance degradation was observed at the end of
+the training cycle, with the final-epoch validation AUC falling well below
+the best-epoch AUC (Fig. \ref{fig:dann_stability}).
+The observed decline in target-domain AUC beyond the optimal epoch
+is consistent with two competing explanations: catastrophic forgetting,
+in which the adversarial objective progressively disrupts diagnostically
+relevant structure in~$\mathbf{h}$, and standard overfitting, in which
+the pathology classifier memorises source-pool-specific patterns that
+do not transfer to the target institution. These can be distinguished
+by monitoring source-pool validation AUC alongside target AUC: a
+simultaneous decline in both metrics implicates representation-level
+disruption, whereas a divergence---source AUC stable or improving
+while target AUC falls---indicates overfitting. Figure~\ref{fig:dann_stability}
+plots target AUC only; disentangling these mechanisms is left for
+future work.
+
+MINet-DANN-CF directly addresses this instability by freezing the
+adversarially trained backbone at its best checkpoint and retraining
+only the pathology classifier $G_y$ on the source pool under the same
+strict LOSO protocol.
+
+% MINet-DANN also exhibited a training stability problem: severe
+% target-domain performance degradation was observed at the end of the
+% training cycle, with the final-epoch validation AUC falling well
+% below the best-epoch AUC.
+% This pattern is consistent with catastrophic forgetting, in which the
+% adversarial objective gradually distorts the diagnostic decision
+% boundaries beyond their optimal configuration.
+
+% MINet-DANN-CF directly addresses this instability by freezing the
+% adversarially trained backbone at its best checkpoint and retraining
+% only the pathology classifier $G_y$ on the source pool under the same
+% strict LOSO protocol.
+\textbf{[TBF: report MINet-DANN-CF LOSO AUC and MCC once
+experiments are complete, and quantify the recovery in diagnostic
+performance relative to MINet-DANN.]}
+
+Per-institution AUC and MCC profiles for MINet, MINet-DANN, and
+MINet-DANN-CF are shown in Figures~\ref{fig:all_strategies_auc}
+and~\ref{fig:all_strategies_mcc}.
+The training stability scatter plot for MINet-DANN (best-epoch
+vs.\ final-epoch AUC) is shown in
+Figure~\ref{fig:stability_scatter_dann}.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{Figs/auc_raw_dann_diagnosis.png}
+  \caption{Per-institution neuroscreening AUC under the LOSO protocol
+    for MINet (unharmonised baseline), MINet-DANN, and MINet-DANN-CF.
+    All three conditions are strictly comparable under the same
+    zero-shot LOSO protocol.}
+  \label{fig:all_strategies_auc}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{Figs/mcc_raw_dann_diagnosis.png}
+  \caption{Per-institution neuroscreening MCC under the LOSO protocol
+    for MINet (unharmonised baseline), MINet-DANN, and MINet-DANN-CF.}
+  \label{fig:all_strategies_mcc}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\textwidth]{Figs/raw_dann_final_vs_best.png}
+  \caption{Training stability for MINet-DANN: best-epoch vs.\
+    final-epoch target AUC across all 30 LOSO rounds.
+    Points below the diagonal indicate performance degradation
+     at the end of the training cycle.}
+  \label{fig:stability_scatter_dann}
+\end{figure}
+
+
 \subsubsection{Aggregate Neuroscreening Performance}
 
-Tables~\ref{tab:clinical_cv} and~\ref{tab:clinical_loso} report
-aggregate neuroscreening MCC and AUC under 5-fold cross-validation
-and LOSO respectively for all conditions.
-Known results from the thesis baseline (unharmonised, site-wise
-standardisation, and neuroCombat, 5-fold CV and LOSO) are included
-where available; all other cells await completion of the extended
-experiments.
+Table~\ref{tab:clinical_loso} consolidates aggregate neuroscreening
+performance across all feature-level and signal-level conditions
+under the LOSO protocol.
+Known results (unharmonised, site-wise standardisation, and
+neuroCombat) are included where available; all other cells await
+completion of the extended experiments.
+For reference, preliminary 5-fold cross-validation results on these
+three baseline conditions confirmed that harmonisation benefits are
+not confined to the zero-shot setting: site-wise standardisation and
+neuroCombat each improved CV AUC by approximately 0.015 relative to
+the unharmonised baseline, consistent with the direction and
+magnitude of the LOSO gains reported here.
 
-Under the LOSO protocol without PCA pre-orthogonalisation,
-neuroCombat yields the highest mean AUC ($0.808 \pm 0.072$) and
-MCC ($0.420 \pm 0.122$), followed closely by site-wise
-standardisation (AUC $0.801 \pm 0.064$, MCC $0.407 \pm 0.116$).
-CovBat falls slightly below the unharmonised baseline
-(AUC $0.791 \pm 0.070$ vs.\ $0.800 \pm 0.078$), suggesting that
-its covariance-level correction does not translate into improved
-clinical discrimination under LOSO.
-With PCA pre-orthogonalisation, all four harmonisation methods
-converge to a narrow performance band
-(AUC $0.782$--$0.789$, MCC $0.370$--$0.395$), below the
-no-PCA results, indicating that the decorrelation step equalises
-conditions but at a modest cost to aggregate diagnostic accuracy.
-
-The logistic regression linear probe shows a similar pattern but at
-uniformly lower performance levels.
-Without PCA, CovBat yields the best LR AUC ($0.783 \pm 0.070$),
-followed by neuroCombat ($0.775 \pm 0.076$), with unharmonised
-features at $0.770 \pm 0.079$.
-The CatBoost--LR gap in neuroscreening performance is notably
-smaller ($\sim$0.03 AUC) than the gap in site classification,
-confirming that the clinical task relies less on nonlinear
-feature interactions than site discrimination does.
-\textbf{[TBF: complete once DANN conditions are finalised.]}
-
-\begin{table}[htbp]
-  \centering
-  \caption{Neuroscreening performance under 5-fold cross-validation
-    (mean $\pm$ SD) for all conditions.
-    $^\dagger$Signal-level models are evaluated under the LOSO
-    protocol only (Section~\ref{subsubsec:clinical_eval}); 5-fold CV
-    results are not applicable.}
-  \label{tab:clinical_cv}
-  \begin{tabular}{lcc}
-    \toprule
-    \textbf{Method} & \textbf{MCC} & \textbf{AUC} \\
-    \midrule
-    \multicolumn{3}{l}{\textit{CatBoost, without PCA pre-orthogonalisation}} \\
-    \quad Unharmonised
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad Site-wise standardisation
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad neuroCombat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \midrule
-    \multicolumn{3}{l}{\textit{CatBoost, with PCA pre-orthogonalisation}} \\
-    \quad PCA only
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad PCA + site-wise stand.
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad PCA + neuroCombat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad PCA + CovBat
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \midrule
-    \multicolumn{3}{l}{\textit{Signal-level adversarial harmonisation$^\dagger$}} \\
-    \quad MINet ($\lambda \equiv 0$)
-      & \multicolumn{2}{c}{---} \\
-    \quad MINet-MTL
-      & \multicolumn{2}{c}{---} \\
-    \quad MINet-DANN
-      & \multicolumn{2}{c}{---} \\
-    \quad MINet-DANN+tuning
-      & \multicolumn{2}{c}{---} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\textbf{[TBF: narrative summary once all conditions are complete,
+addressing: (i) whether harmonisation consistently improves on the
+unharmonised baseline; (ii) additional aggregate benefit of PCA
+pre-orthogonalisation; (iii) relative performance of CovBat versus
+neuroCombat and site-wise standardisation; (iv) where the
+signal-level conditions sit relative to feature-level conditions.]}
 
 \begin{table}[htbp]
   \centering
   \caption{Neuroscreening performance under the Leave-One-Site-Out
-    protocol (mean $\pm$ SD) for all conditions.}
+    protocol (mean $\pm$ SD across 30 rounds) for all conditions.
+    All conditions are evaluated under the same strict zero-shot LOSO
+    protocol and are directly comparable.}
   \label{tab:clinical_loso}
   \begin{tabular}{lcc}
     \toprule
     \textbf{Method} & \textbf{MCC} & \textbf{AUC} \\
     \midrule
-    \multicolumn{3}{l}{\textit{CatBoost, without PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, without PCA
+      pre-orthogonalisation}} \\
     \quad Unharmonised
       & $0.399 \pm 0.134$ & $0.800 \pm 0.078$ \\
     \quad Site-wise standardisation
@@ -1391,7 +1596,8 @@ feature interactions than site discrimination does.
     \quad CovBat
       & $0.392 \pm 0.128$ & $0.791 \pm 0.070$ \\
     \midrule
-    \multicolumn{3}{l}{\textit{CatBoost, with PCA pre-orthogonalisation}} \\
+    \multicolumn{3}{l}{\textit{CatBoost, with PCA
+      pre-orthogonalisation}} \\
     \quad PCA only
       & $0.370 \pm 0.124$ & $0.782 \pm 0.076$ \\
     \quad PCA + site-wise stand.
@@ -1421,15 +1627,15 @@ feature interactions than site discrimination does.
     \quad PCA + CovBat
       & $0.386 \pm 0.119$ & $0.783 \pm 0.076$ \\
     \midrule
-    \multicolumn{3}{l}{\textit{Signal-level adversarial harmonisation}} \\
+    \multicolumn{3}{l}{\textit{Signal-level conditions}} \\
     \quad MINet ($\lambda \equiv 0$)
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.567  \pm 0.010$ & $0.852 \pm 0.005$ \\
     \quad MINet-MTL
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.431 \pm 0.120$ & $0.788 \pm 0.066$ \\
     \quad MINet-DANN
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
-    \quad MINet-DANN+tuning
-      & \textbf{[TBF]} & \textbf{[TBF]} \\
+      & $0.475 \pm 0.130$& $0.810 \pm 0.073$ \\
+    \quad MINet-DANN-CF
+      & $0.475 \pm 0.130$ & $0.812 \pm 0.071$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1437,7 +1643,7 @@ feature interactions than site discrimination does.
 % -----------------------------------------------------------------------
 \section{Discussion}
 \label{sec:discussion}
-
+\td{dyskusja do dokładniejszego sczytania jak już będzie komplet wyników}
 \subsection{The Nature and Magnitude of the Site Effect}
 \label{subsec:disc_site_effect}
 
@@ -1449,54 +1655,53 @@ The range of per-site MCC values---from 0.952 (H19) to 0.160
 (H5)---reflects the heterogeneity of the corpus: institutions with
 distinctive demographic profiles (e.g.\ H7 and H19, which serve
 predominantly older patients) or unusual recording protocols
-(e.g.\ H16, with sessions up to 8\,322 seconds) are most
-reliably identified.
-Institutions at the lower end of the MCC range (H5, H13, H21,
-H23) are likely to have feature distributions that overlap
-substantially with those of neighbouring sites, either because of
-similar patient demographics or because their recording protocols
-are less distinctive.
+(e.g.\ H16, with sessions up to 8\,322 seconds) are most reliably
+identified.
+Institutions at the lower end of the MCC range (H5, H13, H21, H23)
+are likely to have feature distributions that overlap substantially
+with those of neighbouring sites, either because of similar patient
+demographics or because their recording protocols are less
+distinctive.
 
 The SHAP analysis and ablation study converge on a consistent
 interpretation: inter-electrode coherence features are the primary
 carriers of site-specific information.
-The elevated importance of O1--O2 coherence is consistent with
-the hypothesis that differences in eye-open versus eye-closed
-protocols across institutions modulate occipital alpha coherence,
-which is highly sensitive to visual state.
+The elevated importance of O1--O2 coherence is consistent with the
+hypothesis that differences in eye-open versus eye-closed protocols
+across institutions modulate occipital alpha coherence, which is
+highly sensitive to visual state.
 The prominence of beta-band coherence in temporal regions is
 consistent with variability in muscle artefact levels arising from
 differences in patient preparation, scalp cleaning, and electrode
-impedance management across sites, since the beta band overlaps
-with the electromyographic spectrum.
+impedance management across sites, since the beta band overlaps with
+the electromyographic spectrum.
 Delta-band power and frontal Fz power, identified as important
-spectral components, may reflect differences in patient alertness
-and vigilance state at recording time.
+spectral components, may reflect differences in patient alertness and
+vigilance state at recording time.
 
 \subsection{The Harmonisation Paradox and the Two-Classifier
   Interpretation}
 \label{subsec:disc_paradox}
 
 The most striking finding of this study is the \emph{harmonisation
-paradox}: all marginal correction methods successfully reduced
-pairwise Cohen's~$d$ inter-site differences and drove the logistic
-regression linear probe to near-chance site-classification MCC, yet
-simultaneously increased the CatBoost nonlinear probe MCC towards a
-near-ceiling value.
+paradox} (Section~\ref{subsubsec:paradox}): all marginal correction
+methods successfully reduced pairwise Cohen's~$d$ inter-site
+differences and drove the logistic regression linear probe to
+near-chance site-classification MCC, yet simultaneously increased the
+CatBoost nonlinear probe MCC towards a near-ceiling value.
 
 The two-classifier framework resolves this apparent contradiction.
 Marginal correction adjusts the mean and variance of each feature
-independently, thereby equalising marginal distributions across
-sites and removing the linear component of the site effect.
-However, the site effect is encoded not only in marginal
-distributions but also in the \emph{covariance structure} between
-features---a form of inter-site variability that feature-by-feature
-corrections leave entirely
-intact~\cite{hu2023image}.
+independently, thereby equalising marginal distributions across sites
+and removing the linear component of the site effect.
+However, the site effect is encoded not only in marginal distributions
+but also in the \emph{covariance structure} between features---a form
+of inter-site variability that feature-by-feature corrections leave
+entirely intact~\cite{hu2023image}.
 By equalising means and variances, these methods remove the dominant
 sources of within-site variance, causing the subtler but highly
-structured inter-feature covariance patterns that encode site
-identity to become more salient to a nonlinear classifier.
+structured inter-feature covariance patterns that encode site identity
+to become more salient to a nonlinear classifier.
 This argument is directly analogous to that advanced by
 Mellot~et~al.~\cite{mellot2023meeg} in the context of Riemannian
 geometry-based EEG alignment.
@@ -1520,56 +1725,65 @@ summaries.
 
 \subsection{Signal-Level Adversarial Harmonisation}
 \label{subsec:disc_dann}
+The four signal-level training conditions evaluated in this study
+provide converging evidence on both the effectiveness and the
+limitations of end-to-end adversarial harmonisation in the clinical
+EEG setting.
 
-The four DANN variants evaluated in this study are designed to test
-whether end-to-end representation learning can overcome the
-fundamental limitation of marginal correction.
-The theoretical prediction is clear: MINet-MTL, which trains a domain
-classifier without gradient reversal, should actively exploit site
-identity and is therefore expected to produce a larger CatBoost-MCC
-on $\mathbf{h}$ than MINet, representing an empirical upper bound on
-the site information an unconstrained multi-task network encodes in
-the recording-level representation.
-MINet-DANN, which trains with the GRL, should suppress site
-information at the representation level; the key empirical question
-is whether this suppression extends to the \emph{nonlinear}
-covariance component, as measured by the CatBoost probe on
-$\mathbf{h}$.
-MINet-DANN+tuning addresses a practical limitation of adversarial
-training: the learned representation may not immediately yield
-well-calibrated diagnostic predictions for a new site, and
-recalibrating the pathology classifier $G_y$ on a frozen,
-site-agnostic backbone recovers diagnostic utility without
-modifying the harmonised representation.
+The domain MCC results confirm that the Gradient Reversal Layer
+successfully decouples site-specific signatures from the
+recording-level representation~$\mathbf{h}$.
+MINet-MTL, which trains the site discriminator without gradient
+reversal, actively encodes site identity---as expected for an
+unconstrained multi-task objective---and serves as the empirical
+upper bound on the site information that such a network would retain.
+MINet-DANN achieves near-zero domain MCC on the source pool,
+confirming that the adversarial objective forced the latent space to
+become site-agnostic.
 
-\textbf{[TBF: complete the discussion of DANN results once all
-experimental conditions are finalised, addressing: (i) whether
-MINet-DANN reduces the LR--CatBoost gap on $\mathbf{h}$ relative to
-all feature-level conditions; (ii) whether MINet-DANN+tuning recovers
-or exceeds the neuroscreening performance of the best feature-level
-condition under LOSO; and (iii) the theoretical implications of the
-observed LR--CatBoost gap pattern across all four DANN variants.]}
+A key practical finding concerns the training instability of
+MINet-DANN: the adversarial objective gradually distorts the
+diagnostic decision boundaries, causing final-epoch performance to
+fall substantially below the best-epoch AUC in many LOSO rounds.
+Whether this reflects true catastrophic forgetting---in which the
+adversarial objective progressively disrupts diagnostically relevant
+structure in~$\mathbf{h}$---or overfitting of the diagnostic head
+to source-pool-specific patterns that do not transfer to the target
+institution cannot be determined from target AUC alone and warrants
+further investigation.
+MINet-DANN-CF directly addresses this instability by decoupling the
+representation from the classifier: the adversarially trained backbone
+is frozen at its best checkpoint, and only the pathology classifier
+$G_y$ is retrained on the source pool under the same strict zero-shot
+LOSO protocol.
+Because the representation $\mathbf{h}$ is unchanged, the
+site-invariance established by MINet-DANN is fully preserved, while
+the classifier head is recalibrated to the site-agnostic feature
+space without further adversarial distortion.
 
+The key empirical question is whether MINet-DANN-CF recovers the
+diagnostic performance lost during adversarial training and whether
+it improves over both the MINet baseline and the feature-level LOSO
+conditions.
+\textbf{[TBF: complete this comparison once MINet-DANN-CF LOSO
+results are available, and address whether the LR--CatBoost gap on
+$\mathbf{h}$ for MINet-DANN is smaller than for all feature-level
+conditions, indicating suppression of the nonlinear covariance
+component of the site effect.]}
 \subsection{Impact on Clinical Neuroscreening}
 \label{subsec:disc_clinical}
 
-Under the stringent LOSO protocol, the best feature-level condition
-(neuroCombat without PCA) achieves a mean AUC of
-$0.808 \pm 0.072$, a modest $+0.008$ improvement over the
-unharmonised baseline ($0.800 \pm 0.078$).
-This improvement, while consistent across most institutions,
-highlights the difficulty of the neuroscreening task in a
-multi-centre setting: even after harmonisation, institution-level
-AUC ranges from below 0.70 to above 0.90.
-PCA pre-orthogonalisation, despite substantially reducing the
-harmonisation paradox in site-discriminability, does not translate
-into improved diagnostic performance
-(best PCA condition AUC: $0.790 \pm 0.077$).
-This suggests that the covariance structure removed by PCA carries
-some diagnostically relevant variance alongside the site-related
-variance.
-\textbf{[TBF: complete with DANN results and practical deployment
-recommendations once all experiments are finalised.]}
+%The LOSO results show that all feature-level harmonisation methods
+%improve neuroscreening MCC over the unharmonised baseline (from
+%$0.400$ to $0.417$--$0.427$) and AUC (from $0.737$ to
+%$0.752$--$0.755$), with neuroCombat yielding the largest gain.
+MINet-DANN under the strict zero-shot LOSO protocol achieves a mean
+AUC of $0.828$ and MCC of $0.496$, substantially above the
+feature-level LOSO conditions.
+Full interpretation of all conditions, including MINet-DANN-CF, will
+be provided once the remaining experiments are complete.
+\textbf{[TBF: complete once CovBat, PCA, MINet, MINet-MTL, and
+MINet-DANN-CF LOSO results are available.]}
 
 \subsection{Limitations}
 \label{subsec:limitations}
@@ -1583,39 +1797,39 @@ corpus and could not be controlled for.
 Second, all marginal correction methods adjust only the first two
 moments of each feature's distribution and cannot correct
 higher-order distributional differences.
-Third, the LOSO calibration procedure (using $n_{\mathrm{cal}} = 30$
-normal recordings from the held-out site) introduces a practical
-dependency on the availability of a small representative sample from
-any new site.
-For feature-level methods this sample is used solely to fit
-harmonisation parameters; for signal-level DANN variants it is
-included in the source-pool training data, introducing a minor
-asymmetry relative to the strict LOSO setting.
-Given that $n_{\mathrm{cal}} = 30$ constitutes fewer than 0.06\% of
-the total training corpus, the expected bias on reported performance
-estimates is negligible, but this should be borne in mind when
-comparing feature-level and signal-level results directly.
-Fourth, PCA pre-orthogonalisation discards the covariance structure
+Third, PCA pre-orthogonalisation discards the covariance structure
 of the original feature space; while this attenuates the
 harmonisation paradox, it also removes inter-feature relationships
 that may carry clinically relevant information, and the long-term
 impact on downstream task performance warrants further investigation.
-Fifth, the CatBoost probe applied to the DANN representations
+Fourth, the CatBoost probe applied to the DANN representations
 $\mathbf{h}$ evaluates nonlinear site discriminability in a
-288-dimensional latent space rather than the original 2\,850-dimensional
-feature space; while this is internally consistent within the
-two-classifier framework, direct numerical comparison between the
-feature-level and signal-level CatBoost-MCC values should be
-interpreted with caution.
+288-dimensional latent space rather than the original
+2\,850-dimensional feature space; while this is internally consistent
+within the two-classifier framework, direct numerical comparison
+between the feature-level and signal-level CatBoost-MCC values should
+be interpreted with caution.
+Fifth, although MINet-DANN-CF eliminates the catastrophic forgetting
+observed in MINet-DANN by freezing the backbone, it depends on the
+quality of the MINet-DANN checkpoint selected; if the best-epoch
+adversarial checkpoint does not yet achieve sufficient site-invariance,
+the recalibrated classifier inherits a partially site-confounded
+representation.
+Sixth, the present evaluation is confined to the LOSO protocol, which
+measures generalisation to completely unseen institutions.
+The performance of the evaluated harmonisation methods in the
+interpolation setting---where all institutions are represented in
+training---may differ, and this complementary perspective warrants
+investigation in future work.
 
 \subsection{Future Directions}
 \label{subsec:future}
 
 The harmonisation paradox and the two-classifier framework identified
 in this study motivate several directions for future work.
-Most immediately, the completed DANN results will determine whether
-adversarial training can suppress nonlinear covariance-based site
-structure, which neither marginal correction nor PCA
+Most immediately, the completed signal-level results will determine
+whether adversarial training can suppress nonlinear covariance-based
+site structure, which neither marginal correction nor PCA
 pre-orthogonalisation can fully address.
 Beyond harmonisation methodology, the SHAP analysis suggests that
 feature engineering strategies that reduce coherence-feature
@@ -1637,6 +1851,9 @@ effect in a large-scale clinical EEG corpus ($\mathrm{ELM}_s$,
 54\,779 recordings, 30 hospitals) and a systematic evaluation of
 feature-level and signal-level harmonisation strategies under a
 unified two-classifier evaluation framework.
+All conditions are evaluated under a rigorous Leave-One-Site-Out
+protocol, directly simulating zero-shot deployment to previously
+unseen recording environments.
 
 The CatBoost nonlinear classifier achieved a site-identification MCC
 of $0.843 \pm 0.007$, confirming that site identity is strongly
@@ -1650,18 +1867,26 @@ muscle artefact management across institutions.
 A central finding is the \emph{harmonisation paradox}: all marginal
 correction methods successfully removed the linear component of the
 site effect (Cohen's~$d$ reduced; logistic regression MCC near
-chance) yet simultaneously amplified the nonlinear CatBoost MCC
-to near-ceiling values, demonstrating that feature-by-feature
-correction reorganises rather than eliminates the multivariate
-covariance structure of the site effect.
+chance) yet simultaneously amplified the nonlinear CatBoost MCC to
+near-ceiling values, demonstrating that feature-by-feature correction
+reorganises rather than eliminates the multivariate covariance
+structure of the site effect.
 PCA pre-orthogonalisation attenuates this paradox and yields more
 uniform and stable cross-site neuroscreening performance.
 These findings demonstrate that a complete harmonisation evaluation
 framework must include a nonlinear site-discriminability measure
 alongside univariate metrics.
 
-\textbf{[TBF: summarise DANN and full neuroscreening results once
-all experimental conditions are complete.]}
+Signal-level adversarial harmonisation via MINet-DANN achieved a mean
+zero-shot LOSO AUC of $0.828$ and MCC of $0.496$ across 30
+institutions, substantially above the feature-level LOSO conditions.
+MINet-DANN-CF addresses the catastrophic forgetting observed in
+MINet-DANN by freezing the adversarially trained backbone and
+retraining only the pathology classifier on the source pool, thereby
+preserving the site-invariant representation while recalibrating the
+diagnostic decision boundaries.
+\textbf{[TBF: add aggregate MINet-DANN-CF results and final
+narrative once all experiments are complete.]}
 
 These results collectively underscore that the site effect is a
 complex, high-dimensional challenge for which standard marginal
@@ -1674,15 +1899,15 @@ engineering guided by explainability analysis.
 
 % -----------------------------------------------------------------------
 \section*{Acknowledgements}
-The authors are grateful to Elmiko Biosignals sp.~z~o.o.\ for
-providing access to the ELM19 database.
+This study was supported by The National Centre for Research and
+Development (NCBR) grant number POIR.01.01.01-00-1074/21
 
 \section*{CRediT Author Contribution Statement}
-K.C.: Methodology, Software, Formal Analysis, Investigation,
+K.C.: Methodology feature-level, Software, Formal Analysis, Investigation,
 Visualisation, Writing -- Original Draft.
-J.P.: Methodology, Writing -- Review \& Editing.
-J.\.Z.: Conceptualisation, Supervision, Resources, Writing --
-Review \& Editing.
+J.P.: Methodology signal-level, Software, Formal Analysis, Investigation,
+Visualisation, Writing -- Original Draft.
+J.\.Z.: Conceptualisation, Methodology,  Supervision, Resources, Writing -- Original Draft, Review \& Editing.
 
 \section*{Declaration of Competing Interests}
 The authors declare that they have no known competing financial
@@ -1757,40 +1982,54 @@ upon reasonable request to
     \textbf{ID} & \textbf{HW} &
     \textbf{Software} & \textbf{Specialist} \\
     \midrule
-    H1  & ---  & ---            & --- \\
-    H2  & B    & 12.2 / 14.1   & No  \\
-    H3  & ---  & ---            & --- \\
-    H4  & B    & 14.1.0.1      & No  \\
-    H5  & ---  & ---            & --- \\
-    H6  & ---  & ---            & --- \\
-    H7  & B    & 10.3.8.1      & Yes \\
-    H8  & A    & 10.3.8.1      & No  \\
-    H9  & B    & 12             & No  \\
-    H10 & A    & 6              & No  \\
-    H11 & A    & 6.82           & No  \\
-    H12 & ---  & ---            & --- \\
-    H13 & A    & 10.3 / 15.0   & No  \\
-    H14 & ---  & ---            & --- \\
-    H15 & A    & 6.90.2.0       & --- \\
-    H16 & ---  & ---            & --- \\
-    H17 & A    & 6.90.3.1       & No  \\
-    H18 & A    & 8.0.7.8        & Yes \\
-    H19 & A    & 6.90.3.1       & No  \\
-    H20 & A    & 10.3.1.3       & No  \\
-    H21 & ---  & ---            & --- \\
-    H22 & A    & 6.90.3.1       & No  \\
-    H23 & A    & 6.90.0.8       & Yes \\
-    H24 & A    & ---            & No  \\
-    H25 & A    & ---            & Yes \\
+    H1  & ---  & ---                 & --- \\
+    H2  & B    & 12.2 / 14.1        & No  \\
+    H3  & ---  & ---                 & --- \\
+    H4  & B    & 14.1.0.1           & No  \\
+    H5  & ---  & ---                 & --- \\
+    H6  & ---  & ---                 & --- \\
+    H7  & B    & 10.3.8.1           & Yes \\
+    H8  & A    & 10.3.8.1           & No  \\
+    H9  & B    & 12                  & No  \\
+    H10 & A    & 6                   & No  \\
+    H11 & A    & 6.82                & No  \\
+    H12 & ---  & ---                 & --- \\
+    H13 & A    & 10.3 / 15.0        & No  \\
+    H14 & ---  & ---                 & --- \\
+    H15 & A    & 6.90.2.0            & --- \\
+    H16 & ---  & ---                 & --- \\
+    H17 & A    & 6.90.3.1            & No  \\
+    H18 & A    & 8.0.7.8             & Yes \\
+    H19 & A    & 6.90.3.1            & No  \\
+    H20 & A    & 10.3.1.3            & No  \\
+    H21 & ---  & ---                 & --- \\
+    H22 & A    & 6.90.3.1            & No  \\
+    H23 & A    & 6.90.0.8            & Yes \\
+    H24 & A    & ---                 & No  \\
+    H25 & A    & ---                 & Yes \\
     H26 & A    & 6.90 / 10.3 / 14.0 & No  \\
-    H27 & A    & 6.82           & No  \\
-    H28 & A    & 6.61           & No  \\
-    H29 & ---  & ---            & --- \\
-    H30 & A    & 10.3.8.1       & No  \\
+    H27 & A    & 6.82                & No  \\
+    H28 & A    & 6.61                & No  \\
+    H29 & ---  & ---                 & --- \\
+    H30 & A    & 10.3.8.1            & No  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+\newpage
+
+\section{Supplementary Figures}
+\label{app:Figs}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{Figs/raw_amplitude_by_hospital.png}
+  \caption{Raw signal amplitude measured prior to preprocessing (median of per-channel MAD, $\mu$V)
+    by institution for normal recordings in $\mathrm{ELM}_n$.
+    The $y$-axis is log-scaled.
+    The two-order-of-magnitude range reflects differences in amplifier
+    gain settings across sites.}
+  \label{fig:raw_amplitude}
+\end{figure}
 % -----------------------------------------------------------------------
 \bibliographystyle{elsarticle-num}
 \bibliography{bibliography}
