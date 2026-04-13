@@ -1972,46 +1972,51 @@ upon reasonable request to
 \begin{table}[htbp]
   \centering
   \caption{Acquisition metadata for the 30 institutions in
-    $\mathrm{ELM}_s$. Hardware model (A or B), software version, and
-    hospital type are shown where available; dashes indicate
-    missing documentation.}
+    $\mathrm{ELM}_s$. Hardware model (A or B), software version,
+    sampling frequency, and acquisition-level filter settings
+    (high-pass and low-pass, in Hz) are extracted from EDF file
+    headers; dashes indicate missing documentation. Sampling
+    frequencies and filter values are rounded to the nearest
+    integer. Where multiple values appear, different recordings
+    at the same site used different settings.}
   \label{tab:acquisition_metadata}
   \small
-  \begin{tabular}{lcll}
+  \begin{tabular}{lcllll}
     \toprule
     \textbf{ID} & \textbf{HW} &
-    \textbf{Software} & \textbf{Specialist} \\
+    \textbf{Software} & \textbf{Sfreq} &
+    \textbf{HP} & \textbf{LP} \\
     \midrule
-    H1  & ---  & ---                 & --- \\
-    H2  & B    & 12.2 / 14.1        & No  \\
-    H3  & ---  & ---                 & --- \\
-    H4  & B    & 14.1.0.1           & No  \\
-    H5  & ---  & ---                 & --- \\
-    H6  & ---  & ---                 & --- \\
-    H7  & B    & 10.3.8.1           & Yes \\
-    H8  & A    & 10.3.8.1           & No  \\
-    H9  & B    & 12                  & No  \\
-    H10 & A    & 6                   & No  \\
-    H11 & A    & 6.82                & No  \\
-    H12 & ---  & ---                 & --- \\
-    H13 & A    & 10.3 / 15.0        & No  \\
-    H14 & ---  & ---                 & --- \\
-    H15 & A    & 6.90.2.0            & --- \\
-    H16 & ---  & ---                 & --- \\
-    H17 & A    & 6.90.3.1            & No  \\
-    H18 & A    & 8.0.7.8             & Yes \\
-    H19 & A    & 6.90.3.1            & No  \\
-    H20 & A    & 10.3.1.3            & No  \\
-    H21 & ---  & ---                 & --- \\
-    H22 & A    & 6.90.3.1            & No  \\
-    H23 & A    & 6.90.0.8            & Yes \\
-    H24 & A    & ---                 & No  \\
-    H25 & A    & ---                 & Yes \\
-    H26 & A    & 6.90 / 10.3 / 14.0 & No  \\
-    H27 & A    & 6.82                & No  \\
-    H28 & A    & 6.61                & No  \\
-    H29 & ---  & ---                 & --- \\
-    H30 & A    & 10.3.8.1            & No  \\
+    H1  & ---  & ---                 & 250       & 0          & 125 \\
+    H2  & B    & 12.2 / 14.1        & 250, 256  & 0, 0.16   & 104, 125 \\
+    H3  & ---  & ---                 & 250       & 0          & 125 \\
+    H4  & B    & 14.1.0.1           & 250, 256  & 0, 0.16   & 104, 125 \\
+    H5  & ---  & ---                 & 250       & 0          & 125 \\
+    H6  & ---  & ---                 & 250       & 0          & 125 \\
+    H7  & B    & 10.3.8.1           & 250, 256  & 0, 0.16   & 125, 1500 \\
+    H8  & A    & 10.3.8.1           & 250       & 0, 0.16   & 97, 125 \\
+    H9  & B    & 12                  & 256       & 0.16       & 104, 1500 \\
+    H10 & A    & 6                   & 250       & 0, 0.16   & 47, 125 \\
+    H11 & A    & 6.82                & 250       & 0, 0.16   & 71, 125 \\
+    H12 & ---  & ---                 & 250, 256, 600 & 0, 0.16 & 97, 104, 125, 300, 1500 \\
+    H13 & A    & 10.3 / 15.0        & 250       & 0, 0.16   & 47, 97, 125 \\
+    H14 & ---  & ---                 & 250       & 0          & 125 \\
+    H15 & A    & 6.90.2.0            & 250       & 0          & 125 \\
+    H16 & ---  & ---                 & 250       & 0.16       & 97 \\
+    H17 & A    & 6.90.3.1            & 250       & 0          & 125 \\
+    H18 & A    & 8.0.7.8             & 250       & 0          & 125 \\
+    H19 & A    & 6.90.3.1            & 250       & 0          & 125 \\
+    H20 & A    & 10.3.1.3            & 250       & 0, 0.16   & 97, 125 \\
+    H21 & ---  & ---                 & 250       & 0, 0.16   & 97, 125 \\
+    H22 & A    & 6.90.3.1            & 250       & 0          & 125 \\
+    H23 & A    & 6.90.0.8            & 250       & 0          & 125 \\
+    H24 & A    & ---                 & 250, 300  & 0          & 125, 150 \\
+    H25 & A    & ---                 & 250       & 0          & 125 \\
+    H26 & A    & 6.90 / 10.3 / 14.0 & 250       & 0, 0.16   & 47, 97, 125 \\
+    H27 & A    & 6.82                & 250, 600  & 0          & 125, 300 \\
+    H28 & A    & 6.61                & 250       & 0          & 125 \\
+    H29 & ---  & ---                 & 250, 256  & 0, 0.16   & 47, 97, 104, 125 \\
+    H30 & A    & 10.3.8.1            & 250       & 0, 0.16   & 97, 125 \\
     \bottomrule
   \end{tabular}
 \end{table}
