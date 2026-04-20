@@ -12,6 +12,10 @@ paths:
 
 harmonization_methods:
   - raw
+  - sitewise
+  - combat
+  - neurocombat
+  - covbat
 
 catboost_params:
   iterations: 1500
@@ -19,7 +23,6 @@ catboost_params:
   depth: 5
   l2_leaf_reg: 9
   task_type: "GPU"
-  max_bin: 32
 
 cv:
   n_splits: 5

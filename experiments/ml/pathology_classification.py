@@ -24,6 +24,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import LeaveOneGroupOut, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 from src.config import load_pathology_classification_config, PathologyClassificationConfig
@@ -224,6 +225,13 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
         X_train_classifier = X_train_pool
         y_train_classifier = y_train_pool
 
+        # Invariant: calibration normals may enter harmonizer fit but NEVER the classifier training set.
+        calib_idx = set(X_calib.index)
+        assert not calib_idx & set(X_train_classifier.index), \
+            "Calibration normals leaked into classifier training set"
+        assert not calib_idx & set(X_test_full.index), \
+            "Calibration normals leaked into test set"
+
         # --- 3. Harmonization ---
         harmonizer = None
         if harmonization_method == 'combat':
@@ -264,15 +272,19 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
 
         # --- 4. Classification ---
         logger.info(f"Training {model_name} classifier...")
+        scaler = None
         if model_name == 'catboost':
             clf = CatBoostClassifier(**catboost_params)
             clf.fit(X_train_harm, y_train_classifier, verbose=False)
+            y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
         elif model_name == 'logreg':
+            # LogReg is scale-sensitive. RobustScaler is fit on train only so no test-set leakage.
+            scaler = RobustScaler()
+            X_train_scaled = scaler.fit_transform(X_train_harm)
+            X_test_scaled = scaler.transform(X_test_harm)
             clf = LogisticRegression(max_iter=2000, random_state=config.cv.random_state, C=1.0)
-            clf.fit(X_train_harm, y_train_classifier)
-
-        # Predict
-        y_pred_proba = clf.predict_proba(X_test_harm)[:, 1]
+            clf.fit(X_train_scaled, y_train_classifier)
+            y_pred_proba = clf.predict_proba(X_test_scaled)[:, 1]
 
         # Scores
         mcc, acc, precision, recall, f1, auc = get_scores(y_test_full, y_pred_proba)
@@ -292,6 +304,8 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
             steps = []
             if harmonizer:
                 steps.append(('harmonize', harmonizer))
+            if scaler is not None:
+                steps.append(('scale', scaler))
             steps.append(('clf', clf))
 
             pipeline = Pipeline(steps=steps)

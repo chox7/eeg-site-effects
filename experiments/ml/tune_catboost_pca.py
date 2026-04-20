@@ -18,8 +18,8 @@ from sklearn.metrics import roc_auc_score
 from catboost import CatBoostClassifier
 
 # --- Constants ---
-INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered.csv'
-FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered.csv'
+INFO_FILE_PATH = 'data/ELM19/filtered/ELM19_info_filtered_newlabels.csv'
+FEATURES_FILE_PATH = 'data/ELM19/filtered/ELM19_features_filtered_newlabels.csv'
 RESULTS_DIR = 'results/logs/05_pca_sensitivity/tuning'
 PARAMS_DIR = 'config/params'
 os.makedirs(RESULTS_DIR, exist_ok=True)
