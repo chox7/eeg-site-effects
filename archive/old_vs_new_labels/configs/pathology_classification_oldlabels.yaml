@@ -1,0 +1,32 @@
+# Pathology Classification BASELINE — OLD labels on the shared 54k subset
+# LOSO CV with calibration strategy
+
+experiment_name: "patho_clf_oldlabels"
+
+paths:
+  info_file: "data/ELM19/filtered/ELM19_info_filtered_oldlabels.csv"
+  features_file: "data/ELM19/filtered/ELM19_features_filtered_oldlabels.csv"
+  results_file: "results/tables/newlabels/patho_clf_results.csv"
+  pipeline_save_dir: "models/newlabels/patho_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/newlabels/patho_clf"
+
+harmonization_methods:
+  - raw
+
+catboost_params:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+  max_bin: 32
+
+cv:
+  n_splits: 5
+  random_state: 42
+  k_calibration: 30
+
+data:
+  covariates:
+    - age
+    - gender
