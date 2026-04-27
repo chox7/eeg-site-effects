@@ -1,0 +1,64 @@
+# PCA-sensitivity sweep on new-label data.
+#
+# Tests whether PCA pre-orthogonalisation closes the LR↔CatBoost site-probe
+# gap (site task) and what it costs on pathology LOSO (patho task).
+
+experiment_name: "pca_sensitivity_newlabels"
+
+paths:
+  info_file: "data/ELM19/filtered/ELM19_info_filtered_newlabels.csv"
+  features_file: "data/ELM19/filtered/ELM19_features_filtered_newlabels.csv"
+  results_dir: "results/tables/newlabels/pca_sensitivity"
+  log_dir: "results/logs/pca_sensitivity_newlabels"
+
+harmonization_methods:
+  - raw
+  - sitewise
+  - combat
+  - neurocombat
+  - covbat
+
+models:
+  - catboost
+  - logreg
+
+pca_variants:
+  - none
+  - all
+  - 0.99
+  - 0.95
+  - 0.90
+  - 0.80
+
+# Same hyperparameters as patho_clf and site_clf experiments; only the
+# loss/eval metrics differ between binary (patho) and multiclass (site).
+catboost_params_site:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+  verbose: false
+  allow_writing_files: false
+  loss_function: "MultiClass"
+  eval_metric: "MCC"
+  random_seed: 42
+
+catboost_params_patho:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+  verbose: false
+  allow_writing_files: false
+  loss_function: "Logloss"
+  eval_metric: "AUC"
+  random_seed: 42
+
+cv:
+  n_splits_site: 5
+  k_calibration: 30
+  random_state: 42
+
+n_parallel: 1
