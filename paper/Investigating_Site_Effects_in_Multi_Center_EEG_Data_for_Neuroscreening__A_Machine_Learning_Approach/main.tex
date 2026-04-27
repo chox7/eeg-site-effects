@@ -162,8 +162,6 @@ TO GENERATE --- Priority 2:\\
 PENDING AUTHOR DECISIONS:\\
 \quad -- full-data checkpoint identity in MINet LOSO paragraph\\
 \quad -- epoch selection criterion for MINet-MTL in LOSO\\
-\quad -- zero-shot claim in MINet-DANN-CF (target AUC used\\
-\quad\quad for epoch selection = not strictly zero-shot)\\
 \quad -- hyperparameter source for CatBoost neuroscreening classifier\\
 \quad\quad (subsubsec:classifier, current \td{sprawdzic})\\
 }}
@@ -269,7 +267,7 @@ The main contributions of this paper are as follows.
   \item We show that PCA pre-orthogonalisation substantially
         attenuates the harmonisation paradox and stabilises
         cross-site neuroscreening performance across institutions.
-  \item We evaluate three signal-level training conditions—a non-adversarial baseline (trained from scratch), a multi-task network (optimizing both diagnosis and site prediction), and a full adversarial framework (DANN)—under the same Leave-One-Site-Out (LOSO) protocol. This allows us to compare end-to-end representation learning in terms of both site discriminability and downstream neuroscreening performance. Our results demonstrate that while the naive multi-task approach heavily encodes site-specific features (Domain MCC = 0.568±0.077), the adversarial DANN successfully creates a site-invariant representation (Domain MCC near zero: 0.009±0.014) without compromising high diagnostic accuracy (Target AUC = 0.810±0.073), effectively matching the non-adversarial baseline (Target AUC = 0.811±0.070). We additionally evaluate whether classifier recalibration via linear probing on the frozen adversarial backbone (MINet-DANN-CF) further stabilizes the results. As hypothesized, this recalibration recovers and slightly improves the optimal diagnostic performance (Target AUC = 0.812±0.071, Target MCC = 0.475±0.130) without altering the underlying site-invariant features.
+  \item We evaluate three signal-level training conditions—a non-adversarial baseline (trained from scratch), a multi-task network (optimizing both diagnosis and site prediction), and a full adversarial framework (DANN)—under the same Leave-One-Site-Out (LOSO) protocol. This allows us to compare end-to-end representation learning in terms of both site discriminability and downstream neuroscreening performance. Our results demonstrate that while the naive multi-task approach heavily encodes site-specific features (Domain MCC = 0.568±0.077), the adversarial DANN successfully creates a site-invariant representation (Domain MCC near zero: 0.009±0.014) without compromising high diagnostic accuracy (Target AUC = 0.810±0.073), effectively matching the non-adversarial baseline (Target AUC = 0.811±0.070). We additionally evaluate whether classifier recalibration on the frozen adversarial backbone (MINet-DANN-CF) further stabilizes the results. As hypothesized, this recalibration recovers and slightly improves the optimal diagnostic performance (Target AUC = 0.812±0.071, Target MCC = 0.475±0.130) without altering the underlying site-invariant features.
 \end{enumerate}
 
 % -----------------------------------------------------------------------
@@ -400,7 +398,7 @@ linearly accessible component.
 The two-classifier framework---applying both a linear probe and a
 CatBoost nonlinear probe to the DANN representations---is designed to
 provide a direct empirical answer to this question
-(Section~\ref{subsubsec:repr_assessment}).
+(Section~\ref{subsec:harmonisation_results}).
 
 Despite its conceptual advantages, adversarial domain adaptation
 introduces practical challenges that must be carefully managed.
@@ -457,8 +455,8 @@ The resulting dataset---hereafter $\mathrm{ELM}_s$---consists of
 54\,779 EEG recordings from 30 medical institutions, comprising
 26\,568 normal (48.5\%) and 28\,211 pathological (51.5\%) recordings
 from 28\,960 female subjects (52.9\%).
-The distribution of recordings across all 39 institutions before and
-after this filtering step is illustrated in
+The distributions of recordings across all 39 institutions before and
+after this filtering step are illustrated in
 Figure~\ref{fig:institution_histograms}.
 
 \begin{figure}[htbp]
@@ -745,9 +743,13 @@ neuroCombat, and CovBat.
 Original or harmonised feature vectors were passed to a
 gradient-boosted (CatBoost~\cite{prokhorenkova2018catboost})
 classifier.
-Hyperparameters were fixed to the values reported
-in~\cite{poziomska2026quantity}.
-\td{sprawdzić czy tak było z hyperparametrami}
+Hyperparameters were selected via Optuna~\cite{Akiba2019}
+Bayesian optimisation (100 trials, 3-fold stratified CV, AUC
+objective) on the unharmonised feature set:
+1\,500 boosting iterations, learning rate $0.07$, tree depth $5$,
+and $\ell_2$ leaf regularisation $9$.
+Early stopping with a patience of 50 rounds was applied during
+training.
 
 \subsection{Approach 2: Signal-Level Adversarial Harmonisation}
 \label{sec:approach2}
@@ -757,23 +759,20 @@ multiple-instance learning architecture of~\cite{poziomska2026quantity},
 ranging from a non-adversarial baseline to full Domain Adversarial
 Neural Network training~\cite{ganin2016domain} and a subsequent
 classifier recalibration variant.
-Feature-level harmonisation methods operate on pre-extracted,
-hand-crafted representations and, as will be demonstrated in
-Section~\ref{subsec:harmonisation_results}, cannot address
-site-related structure residing in inter-feature covariances or their
-nonlinear dependencies.
-To investigate whether this limitation can be overcome through
-end-to-end representation learning, we integrate the adversarial
-objective with the multiple-instance learning~(MIL) architecture
-of~\cite{poziomska2026quantity}.
-
-Crucially, the adversarial objective requires the network to solve
-both the pathology classification task and the site discrimination
-task simultaneously.
+Feature-level harmonisation methods operate on pre-extracted, hand-crafted representations.
+Univariate variants such as ComBat correct each feature independently and therefore cannot
+address site-related structure residing in inter-feature covariances; CovBat partially
+mitigates this by harmonising principal-component scores, yet remains constrained by
+linear assumptions and leaves nonlinear inter-feature dependencies unaddressed.
+As demonstrated in Section~\ref{subsec:harmonisation_results}, residual site structure
+persists in the harmonised representations.
+To overcome this, we integrate the adversarial objective with the MIL
+architecture of~\cite{poziomska2026quantity}, requiring the network to
+solve the pathology classification and site discrimination tasks simultaneously.
 Because pathology labels are required for the classification head,
-adversarial training is necessarily conducted on the full
-$\mathrm{ELM}_s$ dataset rather than on the normal-only
-$\mathrm{ELM}_n$ subset used in the feature-level experiments.
+adversarial training is conducted on the full $\mathrm{ELM}_s$ dataset
+rather than on the normal-only $\mathrm{ELM}_n$ subset used in the
+feature-level experiments.
 
 \subsubsection{Base Architecture}
 \label{sec:base_arch}
@@ -833,170 +832,170 @@ Frames carrying stronger evidence of pathology are expected to
 receive higher attention weights~\cite{poziomska2026quantity}.
 
 \paragraph{Pathology classifier}
-The recording-level representation $\mathbf{h}$ is passed to a
-pathology classifier $G_y(\,\cdot\,;\theta_y)$---a two-layer fully
-connected network producing a binary normal/pathological prediction.
+The recording-level representation $\mathbf{h}$ is passed to the pathology classifier $G_y(\,\cdot\,;\theta_y)$---a single linear layer acting as the diagnostic head, which produces a binary normal/pathological prediction.
 
 \paragraph{Site discriminator}
-A separate fully connected network $G_d(\,\cdot\,;\theta_d)$ maps
-$\mathbf{h}$ to a distribution over the 30 recording institutions.
-Its connection to the backbone differs across the training variants
-described in Section~\ref{sec:training_variants}: in
-\mbox{MINet-DANN} it is connected via a Gradient Reversal
-Layer~(GRL)~\cite{ganin2016domain}, which leaves the input unchanged
-during forward propagation and multiplies the gradient by $-\lambda$
-during back-propagation; in \mbox{MINet-MTL} it is connected via an
-identity mapping so that gradients flow unmodified; and in the plain
-MINet baseline no site discriminator is attached.
+A separate two-layer fully connected network $G_d(\,\cdot\,;\theta_d)$, incorporating batch normalization, ReLU activation, and dropout, maps $\mathbf{h}$ to a probability distribution over the 30 recording institutions. Its connection to the backbone differs across the training variants described in Section~\ref{sec:training_variants}: in \mbox{MINet-DANN} it is connected via a Gradient Reversal Layer~(GRL)~\cite{ganin2016domain}, which leaves the input unchanged during forward propagation and multiplies the gradient by $-\lambda$ during back-propagation; in \mbox{MINet-MTL} it is connected via an identity mapping so that gradients flow unmodified; and in the plain MINet baseline, no site discriminator is attached.
 
 \subsubsection{Training Variants}
 \label{sec:training_variants}
 
-Four training conditions are evaluated to isolate the contribution of
-each component of the adversarial framework.
+Four training conditions are evaluated to isolate the contribution
+of each component of the adversarial framework.
 Their harmonisation effectiveness is assessed on representations
 extracted from models trained on the \emph{complete}
 $\mathrm{ELM}_s$ dataset
-(Section~\ref{subsubsec:two_classifier}), while their neuroscreening
-performance is assessed under the Leave-One-Site-Out~(LOSO) protocol
+(Section~\ref{subsubsec:two_classifier}), while their
+neuroscreening performance is assessed under the
+Leave-One-Site-Out (LOSO) protocol
 (Section~\ref{subsubsec:clinical_eval}).
 This separation ensures that (i)~the harmonisation assessment
-reflects the maximum adversarial pressure achievable when all sites
-are observed, providing the most direct comparison with the
-feature-level site-classification experiments on $\mathrm{ELM}_n$;
-and (ii)~the neuroscreening evaluation remains a rigorous test of
-generalisation to previously unseen institutions.
-All four conditions operate under a strict zero-shot LOSO protocol
-and are directly comparable with one another and with the
-feature-level conditions.
+reflects the maximum adversarial pressure achievable when all
+sites are observed, providing the most direct comparison with the
+feature-level site-classification experiments on
+$\mathrm{ELM}_n$; and (ii)~the neuroscreening evaluation remains
+a rigorous test of generalisation to previously unseen
+institutions.
+
+All conditions share the following training protocol.
+In each LOSO round, the source pool is partitioned into a training
+set and a \emph{source-validation set} (reserving up to 100
+recordings per source institution); the entire target site
+constitutes the strictly held-out test set.
+The first three variants (MINet, MINet-MTL, MINet-DANN) are
+initialised from random weights and optimised for a fixed duration
+of 50~epochs.
+Model selection is performed exclusively on the source-validation
+set, preventing any target-domain leakage.
+We report performance both at the optimal source-validation epoch
+(\textbf{Best}) and at the end of the training cycle
+(\textbf{Final}) on the held-out target domain.
 
 \paragraph{MINet (signal-level baseline)}
-The MINet baseline uses the architecture described above without any
-domain objective (site discriminator disconnected and $\lambda \equiv 0$ in GRL,  Figure~\ref{fig:dann_arch}).
-
-The encoder is first pretrained on individual frames in a
-single-instance fashion identical to the siNet pretraining
-of~\cite{poziomska2026quantity}, after which the full MINet network
-is trained for pathology classification on the source pool.
-Pretraining initialises the encoder with discriminative frame-level
-features and consistently yields better convergence than training
-from scratch~\cite{poziomska2026quantity}.
-No site discriminator is attached.
-
-For the harmonisation assessment, MINet is trained on the complete
-$\mathrm{ELM}_s$ dataset; the resulting recording-level
-representations~$\mathbf{h}$ are extracted for all recordings in
-$\mathrm{ELM}_n$ and used to establish the degree of site information
-retained in the absence of any adversarial pressure.
-For neuroscreening evaluation, MINet is retrained from scratch under
-the LOSO protocol, with the pretrained encoder initialised from the
-full-data checkpoint.
+MINet uses the architecture described above without any domain
+objective: the site discriminator $G_d$ is disconnected and
+$\lambda \equiv 0$.
+It serves as the non-adversarial signal-level reference,
+establishing the diagnostic performance achievable by the MIL
+backbone in the absence of any harmonisation pressure.
+For the separate harmonisation assessment, a single MINet instance
+is trained on the complete $\mathrm{ELM}_s$ dataset; the
+resulting representations~$\mathbf{h}$ establish the baseline
+degree of site information retained without adversarial pressure.
 
 \paragraph{MINet-MTL (multi-task baseline, no gradient reversal)}
-MINet-MTL replaces the GRL with an identity mapping, so that the
-gradient from the site discriminator $G_d$ flows unmodified into the
-backbone.
-The network is trained from random initialisation for 50~epochs using
-the combined loss
+MINet-MTL replaces the GRL with an identity mapping, allowing the
+gradient from the site discriminator $G_d$ to flow unmodified
+into the backbone.
+The network is trained under the combined loss:
 \begin{equation}
-    \mathcal{L}_{\mathrm{MTL}}(\theta_f, \theta_a, \theta_y, \theta_d )
-        = 5.0 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right)
-          + \mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
+    \mathcal{L}_{\mathrm{MTL}}(\theta_f,\theta_a,\theta_y,\theta_d)
+    = 5\cdot\mathcal{L}_y\!\left(G_y(\mathbf{h}),y\right)
+      + \mathcal{L}_d\!\left(G_d(\mathbf{h}),d\right),
 \end{equation}
 where $y$ is the pathology label and $d$ is the site label.
-Because the site loss flows normally into the backbone, MINet-MTL is
-expected to \emph{encode} site identity rather than suppress it,
-providing an empirical upper bound on the site information that an
-unconstrained multi-task network would retain in~$\mathbf{h}$.
+Because the site loss flows normally into the backbone, MINet-MTL
+is expected to \emph{encode} rather than suppress site identity,
+providing an empirical upper bound on the site information that
+an unconstrained multi-task network would retain in~$\mathbf{h}$.
 
-For the harmonisation assessment, MINet-MTL is trained on the
-complete $\mathrm{ELM}_s$ dataset; representations~$\mathbf{h}$ are
-extracted for all $\mathrm{ELM}_n$ recordings.
-For neuroscreening evaluation, it is retrained under the LOSO
-protocol; in each round, gradient updates use exclusively the source
-pool, while the target site constitutes the held-out test set.
-
-\paragraph{MINet-DANN (full adversarial training from scratch)}
-MINet-DANN inserts the GRL between the attention module and the site
-discriminator, replacing the site loss with an adversarial objective.
-The network is trained from random initialisation for 50~epochs under
-the saddle-point objective
+\paragraph{MINet-DANN (full adversarial training)}
+MINet-DANN inserts the GRL between the attention module and the
+site discriminator, replacing the explicit site-classification
+loss with an adversarial objective.
+The network is trained under the saddle-point objective:
 \begin{equation}
     \mathcal{L}(\theta_f,\theta_a,\theta_y,\theta_d)
-        = 5.0 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right)
-          - \lambda\,\mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
+    = 5\cdot\mathcal{L}_y\!\left(G_y(\mathbf{h}),y\right)
+      - \lambda\,\mathcal{L}_d\!\left(G_d(\mathbf{h}),d\right),
 \end{equation}
-where $\theta_f$, $\theta_a$, $\theta_y$, and $\theta_d$ are the
-parameters of the frame encoder, attention module, pathology
-classifier, and site discriminator, respectively.
-The domain-adaptation weight $\lambda$ is annealed from 0 to 1
-according to the schedule of~\cite{ganin2016domain}:
+where the domain-adaptation weight $\lambda$ is annealed from 0
+to~1 according to the schedule of~\cite{ganin2016domain}:
 \begin{equation}
-    \lambda_p = \frac{2}{1+\exp(-\gamma p)} - 1, \qquad \gamma = 10,
+    \lambda_p = \frac{2}{1+\exp(-\gamma p)} - 1,
+    \qquad \gamma = 10,
     \label{eq:lambda_schedule}
 \end{equation}
-where $p \in [0,1]$ denotes training progress (fraction of total
-epochs completed).
+and $p \in [0,1]$ denotes training progress.
 This schedule suppresses adversarial pressure in early training,
-allowing the encoder and classifier to first develop discriminative
-representations before the site-invariance constraint is gradually
-enforced.
-
-For the harmonisation assessment, MINet-DANN is trained on the
-complete $\mathrm{ELM}_s$ dataset; representations~$\mathbf{h}$ are
-extracted for all $\mathrm{ELM}_n$ recordings and compared with those
-of MINet and MINet-MTL and with all feature-level harmonisation
-conditions (Section~\ref{subsubsec:repr_assessment}).
-For neuroscreening evaluation, MINet-DANN is retrained under the LOSO
-protocol; model selection in each round is based on the highest
-pathology AUC obtained on a held-out validation subset drawn from the
-source pool.
+allowing the encoder and classifier to first develop
+discriminative representations before the site-invariance
+constraint is fully enforced.
+The optimal diagnostic checkpoint is denoted
+\emph{MINet-DANN-Best}.
 
 \paragraph{MINet-DANN-CF (classifier fine-tuning on a frozen
 adversarial backbone)}
 \label{par:MINet-DANN-CF}
-MINet-DANN-CF evaluates the diagnostic utility of the domain-invariant representation learned by MINet-DANN in isolation from any further representation adaptation. The best-epoch weights from the adversarial training are loaded, and the site discriminator $G_d$ is detached. During this linear probing (classifier recalibration) phase, the entire feature extraction backbone---comprising the frame encoder $G_f$ and the attention mechanism (parameters $\theta_f$ and $\theta_a$)---is strictly frozen to preserve the site-invariant representation $\mathbf{h}$. Only the parameters $\theta_y$ of the pathology classifier $G_y$ are unfrozen and optimised. Training is performed using an AdamW optimiser for 30~epochs, minimising the classification loss:
+MINet-DANN-CF evaluates the diagnostic utility of the
+domain-invariant representation learned by MINet-DANN in
+isolation from any further representation adaptation.
+The network is initialised from the weights of the
+\emph{MINet-DANN-Best} checkpoint; the site discriminator $G_d$
+is detached, and the entire backbone---comprising the frame
+encoder $G_f$ and the attention module (parameters $\theta_f$
+and $\theta_a$)---is strictly frozen to preserve the
+site-invariant representation~$\mathbf{h}$.
+Only the pathology-classifier parameters $\theta_y$ are unfrozen
+and optimised using an AdamW optimiser with a reduced learning
+rate for 50~epochs, minimising the classification loss alone:
 \begin{equation}
-    \mathcal{L}(\theta_y) = \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right).
+    \mathcal{L}(\theta_y)
+    = \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right).
 \end{equation}
-This step recalibrates the diagnostic decision boundaries within the
-fixed, adversarially established site-agnostic latent space without
-altering the representation itself.
+This step recalibrates the diagnostic decision boundaries within
+the fixed, adversarially established site-agnostic latent space
+without altering the representation itself, directly assessing
+whether the adversarially learned~$\mathbf{h}$ is
+\emph{intrinsically} sufficient for accurate cross-site pathology
+classification.
+To mitigate the influence of the original source-side split---which
+was used for adversarial-backbone checkpoint selection---the source
+pool is randomly re-partitioned into a fresh train/validation
+split for the fine-tuning phase, and the best recalibrated state
+is selected on this new source-side validation set.
 
-This design is motivated by the training instability observed in
-\mbox{MINet-DANN}: target-domain validation \textsc{auc} frequently
-peaks well before the final epoch and then declines, suggesting that
-continued adversarial optimisation drives the diagnostic head away from
-its optimal configuration.
-The precise mechanism underlying this degradation---whether
-catastrophic forgetting of diagnostically relevant structure in
-$\mathbf{h}$, overfitting of the pathology classifier to
-source-pool-specific patterns, or a combination of
-both---cannot be determined from target-domain \textsc{auc} alone and is
-left for future work (Section~\ref{subsec:future}).
-By freezing the backbone at its best adversarial checkpoint and
-retraining only $G_y$, \mbox{MINet-DANN-CF} decouples the
-representation from the classifier, asking whether the adversarially
-learned $\mathbf{h}$ is \emph{intrinsically} sufficient for accurate
-cross-site pathology classification, independently of whichever
-instability mechanism is responsible for the observed degradation.
+% Four training conditions are evaluated to isolate the contribution of each component of the adversarial framework. Their harmonisation effectiveness is assessed on representations extracted from models trained on the \emph{complete} $\mathrm{ELM}_s$ dataset (Section~\ref{subsubsec:two_classifier}), while their neuroscreening performance is assessed under the Leave-One-Site-Out (LOSO) protocol (Section~\ref{subsubsec:clinical_eval}). This separation ensures that (i)~the harmonisation assessment reflects the maximum adversarial pressure achievable when all sites are observed, providing the most direct comparison with the feature-level site-classification experiments on $\mathrm{ELM}_n$; and (ii)~the neuroscreening evaluation remains a rigorous test of generalisation to previously unseen institutions.
 
-The data split follows a strict LOSO protocol identical to the other
-signal-level conditions.
-During classifier retraining, no target-domain data is exposed to the
-model: $G_y$ is optimised exclusively on the full source pool.
-To rigorously evaluate the model's performance, we distinguish between two evaluation regimes.
-First, we report the results of the \textit{final training epoch} (MINet-DANN-Final), which constitutes a \textbf{strict zero-shot} evaluation, as the target domain data remains completely unseen during both training and model selection.
-Second, we report the \textit{best-epoch performance} (MINet-DANN-Best), where the target site's validation AUC is used to track the optimal diagnostic state. While the latter is target-informed, it serves to establish the upper bound of the learned representation's utility.
-This dual reporting ensures transparency and allows for a direct comparison with both strictly blinded and target-calibrated literature benchmarks.
+% Crucially, to prevent any target-domain data leakage, all four conditions operate under a \textbf{strict zero-shot LOSO protocol}. In each LOSO round, the available source pool is partitioned into a training set and a \emph{source-validation set} (reserving up to 100 recordings per source institution). Model selection is performed exclusively on this source-validation set. For all variants, we report both the performance at the optimal validation epoch (\textbf{Best}) and at the end of the 50-epoch training cycle (\textbf{Final}) on the strictly unseen target domain.
 
-Because MINet-DANN-CF operates on the same frozen MINet-DANN
-checkpoint, its harmonisation assessment is identical to that
-reported for MINet-DANN (Section~\ref{subsubsec:two_classifier});
-it is included in the two-classifier evaluation for completeness and
-to confirm that classifier retraining does not alter the residual
-site information in~$\mathbf{h}$.
+% \paragraph{MINet (signal-level baseline)}
+% The MINet baseline uses the architecture described above without any domain objective (the site discriminator is disconnected, and $\lambda \equiv 0$ in the gradient reversal layer, Figure~\ref{fig:dann_arch}).
 
+% For the neuroscreening evaluation, the network is trained completely from scratch in each LOSO round using exclusively the source pool. The model weights are randomly initialised and optimised using the classification loss for a fixed duration of 50 epochs. Because model selection relies solely on the source-validation subset, the target domain remains entirely unseen at all stages of both representation learning and classifier optimisation. For the separate harmonisation assessment (measuring intrinsic domain clustering), a single instance of MINet is trained on the complete $\mathrm{ELM}_s$ dataset. The resulting recording-level representations $\mathbf{h}$ are extracted to establish the baseline degree of site information retained by the backbone in the absence of any adversarial pressure.
+
+% \paragraph{MINet-MTL (multi-task baseline, no gradient reversal)}
+% MINet-MTL replaces the gradient reversal layer (GRL) with an identity mapping, allowing the gradient from the site discriminator $G_d$ to flow unmodified into the backbone. The network is trained from random initialisation using the combined loss:
+% \begin{equation}
+%     \mathcal{L}_{\mathrm{MTL}}(\theta_f, \theta_a, \theta_y, \theta_d) = 5 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right) + \mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
+% \end{equation}
+% where $y$ is the pathology label and $d$ is the site label. Because the site loss flows normally into the backbone, MINet-MTL is expected to heavily \emph{encode} site identity rather than suppress it, providing an empirical upper bound on the site information that an unconstrained multi-task network would retain in $\mathbf{h}$. Just like the baseline, it is evaluated under the strict zero-shot LOSO protocol. The absence of adversarial constraints allows the network to freely overfit to source-specific hardware artifacts, which intrinsically explains the high variance typically observed in cross-site performance.
+
+% \paragraph{MINet-DANN (full adversarial training from scratch)}
+% MINet-DANN inserts the GRL between the attention module and the site discriminator, replacing the explicit site classification loss with an adversarial objective. The network is trained from random initialisation under the saddle-point objective:
+% \begin{equation}
+%     \mathcal{L}(\theta_f,\theta_a,\theta_y,\theta_d) = 5 \cdot \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right) - \lambda\,\mathcal{L}_d\!\left(G_d(\mathbf{h}),\,d\right),
+% \end{equation}
+% where $\theta_f$, $\theta_a$, $\theta_y$, and $\theta_d$ are the parameters of the frame encoder, attention module, pathology classifier, and site discriminator, respectively. The domain-adaptation weight $\lambda$ is annealed from 0 to 1 according to the schedule of \cite{ganin2016domain}:
+% \begin{equation}
+%     \lambda_p = \frac{2}{1+\exp(-\gamma p)} - 1, \qquad \gamma = 10,
+%     \label{eq:lambda_schedule}
+% \end{equation}
+% where $p \in [0,1]$ denotes training progress. This schedule suppresses adversarial pressure in early training, allowing the encoder and classifier to first develop discriminative representations before the site-invariance constraint is fully enforced. For neuroscreening evaluation, MINet-DANN is trained under the LOSO protocol, and the optimal diagnostic state (MINet-DANN-Best) is captured using the validation AUC, strictly preventing any target-domain leakage.
+
+% \paragraph{MINet-DANN-CF (classifier fine-tuning on a frozen adversarial backbone)}
+% \label{par:MINet-DANN-CF}
+% MINet-DANN-CF evaluates the diagnostic utility of the domain-invariant representation learned by MINet-DANN in isolation from any further representation adaptation. To achieve this, the backbone is frozen and only the classifier head is
+% retrained. We initialize the network using the weights of the optimal \emph{MINet-DANN-Best} model. The site discriminator $G_d$ is detached, and the entire feature extraction backbone---comprising the frame encoder $G_f$ and the attention mechanism (parameters $\theta_f$ and $\theta_a$)---is strictly frozen to preserve the site-invariant representation $\mathbf{h}$. Only the parameters $\theta_y$ of the pathology classifier $G_y$ are unfrozen and optimised.
+
+% Training is performed using an AdamW optimiser with a reduced learning rate for 50 epochs, minimising only the classification loss:
+% \begin{equation}
+%     \mathcal{L}(\theta_y) = \mathcal{L}_y\!\left(G_y(\mathbf{h}),\,y\right).
+% \end{equation}
+% This step recalibrates the diagnostic decision boundaries within the fixed, adversarially established site-agnostic latent space without altering the representation itself.
+
+% By decoupling the representation from the classifier, MINet-DANN-CF addresses potential training instabilities observed during prolonged adversarial optimisation, directly assessing whether the adversarially learned $\mathbf{h}$ is \emph{intrinsically} sufficient for accurate cross-site pathology classification. As with all other variants, $G_y$ is fine-tuned exclusively on the source pool. To mitigate the influence of the original source-side split---which was used for adversarial-backbone checkpoint selection---the source pool is
+% randomly re-partitioned into a fresh train/validation split for the classifier fine-tuning phase. The best recalibrated state is selected on this new validation set.
 % -----------------------------------------------------------------------
 \subsubsection{Two-Classifier Site-Discriminability Evaluation}
 \label{subsubsec:two_classifier}
@@ -1055,7 +1054,7 @@ models are retrained under the LOSO protocol.
 Since \mbox{MINet-DANN-CF} does not alter the representation
 $\mathbf{h}$ relative to \mbox{MINet-DANN}, both variants share
 the same harmonisation assessment result.
-...
+
 \subsubsection{Feature Importance Analysis}
 \label{subsubsec:shap}
 
@@ -1104,17 +1103,9 @@ a separate batch corresponding to the target institution; the
 remaining recordings from the target site are then corrected using
 the estimated site-specific parameters and constitute the held-out
 test set.
-
 For the unharmonised feature-level baseline
 the calibration sample is discarded.
-For all signal-level conditions (MINet, MINet-MTL, MINet-DANN, and
-MINet-DANN-CF), the calibration sample is included in the source-pool
-training data; the entire target site's recordings constitute the
-held-out test set.
-This protocol directly simulates zero-shot deployment to a previously
-unseen recording environment and is applied uniformly to all
-conditions, ensuring direct comparability across the full set of
-harmonisation strategies.
+For all signal-level conditions (MINet, MINet-MTL, MINet-DANN, and MINet-DANN-CF), the calibration sample is included in the available source pool. Crucially, to prevent any target-domain data leakage during model selection, this source pool is internally partitioned into a training set and a source-validation set. The entire target site's recordings strictly constitute the held-out test set. This protocol directly simulates zero-shot deployment to a previously unseen recording environment and is applied uniformly to all conditions, ensuring direct comparability across the full set of harmonisation strategies.
 
 Performance (MCC and AUC) is reported both as an aggregate across
 all 30 rounds and as a per-institution profile for all conditions.
@@ -1134,8 +1125,8 @@ site effects in the extracted feature space.
 The following sections quantify this effect, evaluate the capacity
 of each harmonisation strategy to suppress it, and assess the
 downstream impact on clinical neuroscreening performance.
-\subsubsection{Site Classification Performance}
 
+\subsubsection{Unharmonised Site Classification Performance}
 The CatBoost nonlinear classifier trained on the unharmonised
 $\mathrm{ELM}_n$ feature set achieved an overall MCC of
 $0.843 \pm 0.007$ across the 30 institutions in 5-fold stratified
@@ -1145,7 +1136,7 @@ The logistic regression linear probe achieved an overall MCC of
 $0.785 \pm 0.005$ on the same unharmonised data.
 The LR--CatBoost gap of $0.058$ on the unharmonised baseline
 establishes the degree to which the site effect in the raw feature
-space is already encoded in nonlinear covariance structure.
+space is already encoded in nonlinear inter-feature dependencies.
 
 Per-institution site-discriminability was further characterised
 using one-vs-rest binary MCC for each institution separately
@@ -1261,7 +1252,7 @@ Table~\ref{tab:site_class_harmonisation} reports the LR-MCC and
 CatBoost-MCC for all conditions.
 The logistic regression linear probe assigned near-chance MCC to all
 harmonised conditions, confirming that marginal correction
-successfully removes the \emph{linear} component of the site effect.
+successfully removes the \emph{linear} component of the site effect. However, CovBat retained a small linear residual (LR-MCC $= 0.176$) - this could suggest that its covariance-level correction leaves some linear site signal
 The CatBoost nonlinear probe, by contrast, assigned near-ceiling MCC
 ($0.924$--$0.969$) to all harmonised conditions applied without PCA
 pre-orthogonalisation, demonstrating the \emph{harmonisation paradox}:
@@ -1269,10 +1260,7 @@ the nonlinear covariance component of the site effect not only
 survives marginal correction but becomes \emph{more} salient to the
 nonlinear classifier.
 
-The LR--CatBoost gap is therefore the quantitative fingerprint of
-the harmonisation paradox: a large gap indicates that the residual
-site effect after correction is encoded almost entirely in covariance
-structure.
+The LR--CatBoost gap is therefore the quantitative fingerprint of the harmonisation paradox: a large gap indicates that the residual site effect after correction is encoded predominantly in nonlinear inter-feature dependencies rather than in marginal feature distributions.
 PCA pre-orthogonalisation substantially reduces this gap by
 destroying the inter-feature covariance prior to correction,
 attenuating the paradox across all harmonisation conditions.
@@ -1389,40 +1377,6 @@ analogous results with PCA pre-orthogonalisation.
 
 
 
-\subsubsection{Residual Site Effect in DANN Representations}
-\label{subsub:residual_side_effects_dann}
-
-To verify whether the Gradient Reversal Layer successfully decouples
-site-specific signatures from physiological features, domain
-classification performance was evaluated on the source pool for each
-of the four signal-level training variants.
-
-MINet-MTL, which trains the site discriminator without gradient
-reversal, exhibited a high domain MCC on the source pool, confirming
-that an unconstrained multi-task objective actively encodes site
-identity in the recording-level representation~$\mathbf{h}$.
-In contrast, adversarial training with the GRL caused the domain
-classifier to fail substantially: MINet-DANN exhibited near-zero
-domain MCC, confirming that the adversarial objective forced the
-latent space to become site-agnostic.
-MINet (the signal-level baseline without any domain objective)
-established the degree of residual site information present in the
-representation in the absence of adversarial pressure.
-As MINet-DANN-CF operates on the same frozen backbone as MINet-DANN,
-its domain MCC is identical by design.
-
-% \begin{figure}[htbp]
-%   \centering
-%   \includegraphics[width=0.7\textwidth]{Figs/domain_mcc_comparison_bar.png}
-%   \caption{Residual site effect across the four signal-level training
-%     variants, quantified by domain MCC evaluated on the source pool.
-%     MINet-MTL (no gradient reversal) retains strong
-%     site-discriminative information; MINet-DANN reduces domain MCC to
-%     near-zero values, confirming successful adversarial harmonisation.
-%     MINet-DANN-CF is identical to MINet-DANN in this assessment.}
-%   \label{fig:dann_domain_mcc}
-% \end{figure}
-
 
 % -----------------------------------------------------------------------
 \subsection{Impact of Harmonisation on Clinical Neuroscreening}
@@ -1470,80 +1424,42 @@ markedly reduced relative to the no-PCA setting.
   \label{fig:patho_auc_pca}
 \end{figure}
 
-
 \subsubsection{Signal-Level Conditions}
 \label{subsubsec:dann_clinical}
+Before reporting neuroscreening performance, we verify that the
+adversarial objective achieved its intended effect on the
+recording-level representation~$\mathbf{h}$.
+MINet-MTL, which trains the site discriminator without gradient
+reversal, retained strong site-discriminative information in~$\mathbf{h}$ (domain MCC $= 0.568 \pm 0.077$), confirming that an unconstrained
+multi-task objective actively encodes site identity.
+MINet-DANN, by contrast, drove domain MCC to near-zero
+($0.009 \pm 0.014$, Figure~\ref{fig:dann_domain_mcc}),
+confirming that the Gradient Reversal Layer successfully rendered
+the latent space site-agnostic.
+Because MINet-DANN-CF operates on the same frozen backbone, its
+domain MCC is identical by design.
 
-MINet-DANN achieved a mean AUC of $0.810 \pm 0.073$ and a mean MCC of $0.475 \pm 0.130$
-across all 30 LOSO target institutions under the strict zero-shot
-protocol.
+Under the strict zero-shot protocol, the optimal MINet-DANN model (selected via the source-validation set) achieved a mean target AUC of $0.791 \pm 0.052$ and a mean MCC of $0.452 \pm 0.105$ across all 30 LOSO institutions.
 
-MINet-DANN also exhibited a training stability problem:
-severe target-domain performance degradation was observed at the end of
-the training cycle, with the final-epoch validation AUC falling well below
-the best-epoch AUC (Fig. \ref{fig:dann_stability}).
-The observed decline in target-domain AUC beyond the optimal epoch
-is consistent with two competing explanations: catastrophic forgetting,
-in which the adversarial objective progressively disrupts diagnostically
-relevant structure in~$\mathbf{h}$, and standard overfitting, in which
-the pathology classifier memorises source-pool-specific patterns that
-do not transfer to the target institution. These can be distinguished
-by monitoring source-pool validation AUC alongside target AUC: a
-simultaneous decline in both metrics implicates representation-level
-disruption, whereas a divergence---source AUC stable or improving
-while target AUC falls---indicates overfitting. Figure~\ref{fig:dann_stability}
-plots target AUC only; disentangling these mechanisms is left for
-future work.
+However, MINet-DANN also exhibited a training stability problem: target-domain performance degraded at the end of the training cycle, with the final-epoch validation AUC falling to $0.777 \pm 0.056$, visibly below the best-epoch AUC (Figure~\ref{fig:stability_scatter_dann}). The observed decline in target-domain AUC beyond the optimal epoch is consistent with two competing explanations: catastrophic forgetting, in which the adversarial objective progressively disrupts diagnostically relevant structure in the latent representation $\mathbf{h}$, and standard overfitting, in which the pathology classifier memorizes source-pool-specific patterns that do not transfer to the target institution. These can be distinguished by monitoring source-pool validation AUC alongside target AUC: a simultaneous decline in both metrics implicates representation-level disruption, whereas a divergence—source AUC stable or improving while target AUC falls—indicates overfitting. Figure~\ref{fig:stability_scatter_dann} plots target AUC only; disentangling these mechanisms is left for future work.
 
-MINet-DANN-CF directly addresses this instability by freezing the
-adversarially trained backbone at its best checkpoint and retraining
-only the pathology classifier $G_y$ on the source pool under the same
-strict LOSO protocol.
+MINet-DANN-CF directly addresses this instability by freezing the adversarially trained backbone at its best checkpoint and retraining only the pathology classifier $G_y$ on the source pool under the same strict LOSO protocol. This strategy successfully recovered and stabilized diagnostic performance, achieving a highly robust final-epoch mean AUC of $0.834 \pm 0.041$ and a mean MCC of $0.498 \pm 0.106$. This marks a substantial quantitative improvement over the raw MINet-DANN and even outperforms the unharmonized Baseline (Best AUC $0.822 \pm 0.043$), confirming that the adversarially scrubbed latent representations are inherently highly discriminative when decoupled from the instability of joint adversarial training.
 
-% MINet-DANN also exhibited a training stability problem: severe
-% target-domain performance degradation was observed at the end of the
-% training cycle, with the final-epoch validation AUC falling well
-% below the best-epoch AUC.
-% This pattern is consistent with catastrophic forgetting, in which the
-% adversarial objective gradually distorts the diagnostic decision
-% boundaries beyond their optimal configuration.
+Per-institution AUC profiles for MINet, MINet-DANN, and MINet-DANN-CF are shown in Figure~\ref{fig:all_strategies_auc} ( \ref{fig:all_strategies_mcc} shows analogous profiles for MCC).
 
-% MINet-DANN-CF directly addresses this instability by freezing the
-% adversarially trained backbone at its best checkpoint and retraining
-% only the pathology classifier $G_y$ on the source pool under the same
-% strict LOSO protocol.
-\textbf{[TBF: report MINet-DANN-CF LOSO AUC and MCC once
-experiments are complete, and quantify the recovery in diagnostic
-performance relative to MINet-DANN.]}
-
-Per-institution AUC and MCC profiles for MINet, MINet-DANN, and
-MINet-DANN-CF are shown in Figures~\ref{fig:all_strategies_auc}
-and~\ref{fig:all_strategies_mcc}.
-The training stability scatter plot for MINet-DANN (best-epoch
-vs.\ final-epoch AUC) is shown in
-Figure~\ref{fig:stability_scatter_dann}.
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{Figs/auc_raw_dann_diagnosis.png}
-  \caption{Per-institution neuroscreening AUC under the LOSO protocol
-    for MINet (unharmonised baseline), MINet-DANN, and MINet-DANN-CF.
-    All three conditions are strictly comparable under the same
-    zero-shot LOSO protocol.}
+  \includegraphics[width=\textwidth]{manuscript_Biomedical_Signal_Processing_and_Control/Figs/auc_new_labels_h1-30.png}
+\caption{Per-institution neuroscreening performance (AUC) under the Leave-One-Site-Out (LOSO) protocol. The figure compares four signal-level training conditions: MINet (unharmonised baseline), MINet-MTL, MINet-DANN, and MINet-DANN-CF. Performance is reported for the optimal model checkpoint (Best epoch). Crucially, to prevent any target-domain data leakage, this optimal state was selected exclusively via a held-out source-validation set. This ensures that the reported results represent a strict zero-shot assessment on the previously unseen target institution.}
   \label{fig:all_strategies_auc}
 \end{figure}
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\textwidth]{Figs/mcc_raw_dann_diagnosis.png}
-  \caption{Per-institution neuroscreening MCC under the LOSO protocol
-    for MINet (unharmonised baseline), MINet-DANN, and MINet-DANN-CF.}
-  \label{fig:all_strategies_mcc}
-\end{figure}
+
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.6\textwidth]{Figs/raw_dann_final_vs_best.png}
+  \includegraphics[width=0.6\textwidth]{manuscript_Biomedical_Signal_Processing_and_Control/Figs/dann_training_stability_new_labels.png}
   \caption{Training stability for MINet-DANN: best-epoch vs.\
     final-epoch target AUC across all 30 LOSO rounds.
     Points below the diagonal indicate performance degradation
@@ -1551,7 +1467,7 @@ Figure~\ref{fig:stability_scatter_dann}.
   \label{fig:stability_scatter_dann}
 \end{figure}
 
-
+\newpage
 \subsubsection{Aggregate Neuroscreening Performance}
 
 Table~\ref{tab:clinical_loso} consolidates aggregate neuroscreening
@@ -1578,8 +1494,7 @@ signal-level conditions sit relative to feature-level conditions.]}
   \centering
   \caption{Neuroscreening performance under the Leave-One-Site-Out
     protocol (mean $\pm$ SD across 30 rounds) for all conditions.
-    All conditions are evaluated under the same strict zero-shot LOSO
-    protocol and are directly comparable.}
+    }
   \label{tab:clinical_loso}
   \begin{tabular}{lcc}
     \toprule
@@ -1629,16 +1544,20 @@ signal-level conditions sit relative to feature-level conditions.]}
     \midrule
     \multicolumn{3}{l}{\textit{Signal-level conditions}} \\
     \quad MINet ($\lambda \equiv 0$)
-      & $0.567  \pm 0.010$ & $0.852 \pm 0.005$ \\
+      & $0.501 \pm 0.080$ & $0.822 \pm 0.043$ \\
     \quad MINet-MTL
-      & $0.431 \pm 0.120$ & $0.788 \pm 0.066$ \\
+      & $0.400 \pm 0.096$ & $0.763 \pm 0.058$ \\
     \quad MINet-DANN
-      & $0.475 \pm 0.130$& $0.810 \pm 0.073$ \\
+      & $0.452 \pm 0.105$ & $0.791 \pm 0.052$ \\
     \quad MINet-DANN-CF
-      & $0.475 \pm 0.130$ & $0.812 \pm 0.071$ \\
+      & $0.498 \pm 0.106$ & $0.834 \pm 0.041$ \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+
+
+
 
 % -----------------------------------------------------------------------
 \section{Discussion}
@@ -1773,15 +1692,8 @@ component of the site effect.]}
 \subsection{Impact on Clinical Neuroscreening}
 \label{subsec:disc_clinical}
 
-%The LOSO results show that all feature-level harmonisation methods
-%improve neuroscreening MCC over the unharmonised baseline (from
-%$0.400$ to $0.417$--$0.427$) and AUC (from $0.737$ to
-%$0.752$--$0.755$), with neuroCombat yielding the largest gain.
-MINet-DANN under the strict zero-shot LOSO protocol achieves a mean
-AUC of $0.828$ and MCC of $0.496$, substantially above the
-feature-level LOSO conditions.
-Full interpretation of all conditions, including MINet-DANN-CF, will
-be provided once the remaining experiments are complete.
+
+Under the strict zero-shot LOSO protocol, the optimal MINet-DANN model achieved a mean diagnostic AUC of $0.791 \pm 0.052$ and an MCC of $0.452 \pm 0.105$. While this performance surpasses the naive multi-task approach (MINet-MTL, Best AUC $0.763 \pm 0.058$), it falls short of the unharmonized signal-level baseline (Best AUC $0.822 \pm 0.043$). However, when the adversarially harmonized representations are decoupled from the joint training process via classifier finetuning, MINet-DANN-CF recovers and exceeds this performance, achieving the highest overall diagnostic accuracy with a robust best-epoch AUC of $0.834 \pm 0.041$ and an MCC of $0.498 \pm 0.106$ highly comparable to final-epoch AUC of $0.835 \pm 0.042$ and an MCC of $0.499 \pm 0.104$.
 \textbf{[TBF: complete once CovBat, PCA, MINet, MINet-MTL, and
 MINet-DANN-CF LOSO results are available.]}
 
@@ -1877,16 +1789,10 @@ These findings demonstrate that a complete harmonisation evaluation
 framework must include a nonlinear site-discriminability measure
 alongside univariate metrics.
 
-Signal-level adversarial harmonisation via MINet-DANN achieved a mean
-zero-shot LOSO AUC of $0.828$ and MCC of $0.496$ across 30
-institutions, substantially above the feature-level LOSO conditions.
-MINet-DANN-CF addresses the catastrophic forgetting observed in
-MINet-DANN by freezing the adversarially trained backbone and
-retraining only the pathology classifier on the source pool, thereby
-preserving the site-invariant representation while recalibrating the
-diagnostic decision boundaries.
-\textbf{[TBF: add aggregate MINet-DANN-CF results and final
-narrative once all experiments are complete.]}
+The necessity of the adversarial framework is starkly highlighted when comparing MINet-DANN against the naive multi-task approach (MINet-MTL). Without the gradient reversal mechanism to actively penalize site-specific features, MINet-MTL explicitly learns to identify the recording institutions, reaching a high Domain MCC of $0.544 \pm 0.079$ by the end of training. This creates a catastrophic feature trade-off: as the network increasingly encodes hardware and protocol artifacts into the latent space, it actively sacrifices diagnostically relevant information. Consequently, its zero-shot diagnostic performance collapses, with the final-epoch target AUC plummeting to $0.666 \pm 0.063$ (down from an earlier, already sub-optimal validation peak of $0.763 \pm 0.058$).
+In contrast, signal-level adversarial harmonisation via MINet-DANN successfully eliminated this site-specific bias (reducing Final Domain MCC to near zero: $0.006 \pm 0.006$) while restoring diagnostic efficacy across the 30 institutions. Under the strict zero-shot LOSO protocol, the optimal MINet-DANN model achieved a mean diagnostic AUC of $0.791 \pm 0.052$ and an MCC of $0.452 \pm 0.105$. While this performance surpasses the naive multi-task approach (MINet-MTL, Best AUC $0.763 \pm 0.058$), it falls short of the unharmonized signal-level baseline (Best AUC $0.822 \pm 0.043$). However, when the adversarially harmonized representations are decoupled from the joint training process, MINet-DANN-CF recovers and exceeds this performance. It achieves the highest overall diagnostic accuracy while demonstrating exceptional training stability, with the optimal validation state (Best AUC $0.834 \pm 0.041$, MCC $0.498 \pm 0.106$) being virtually indistinguishable from the highly robust end-of-training state (Final AUC $0.835 \pm 0.042$, MCC $0.499 \pm 0.104$).
+
+Building upon this, MINet-DANN-CF aims to optimally recalibrate the diagnostic decision boundaries using only the source pool, ensuring the site-invariant representation remains strictly preserved. Freezing the adversarially trained backbone and retraining solely the pathology classifier yielded our highest aggregate performance under the strict zero-shot protocol, achieving a robust final-epoch mean AUC of $0.835 \pm 0.042$ and an MCC of $0.499 \pm 0.104$. This confirms the high diagnostic utility of the domain-invariant features extracted by the adversarial framework, proving they remain highly discriminative and stable even when decoupled from the joint adversarial training process.
 
 These results collectively underscore that the site effect is a
 complex, high-dimensional challenge for which standard marginal
@@ -1975,10 +1881,9 @@ upon reasonable request to
     $\mathrm{ELM}_s$. Hardware model (A or B), software version,
     sampling frequency, and acquisition-level filter settings
     (high-pass and low-pass, in Hz) are extracted from EDF file
-    headers; dashes indicate missing documentation. Sampling
-    frequencies and filter values are rounded to the nearest
-    integer. Where multiple values appear, different recordings
-    at the same site used different settings.}
+    headers; dashes indicate missing documentation. Where multiple
+    values appear, different recordings at the same site used
+    different settings.}
   \label{tab:acquisition_metadata}
   \small
   \begin{tabular}{lcllll}
@@ -2035,7 +1940,28 @@ upon reasonable request to
     gain settings across sites.}
   \label{fig:raw_amplitude}
 \end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{manuscript_Biomedical_Signal_Processing_and_Control/Figs/dom_mcc_newlabels.png}
+  \caption{Residual site effect across the signal-level training main
+    variants - DANN and MTL, quantified by domain MCC evaluated on the source pool.
+    MINet-MTL (no gradient reversal, final epoch) retains strong
+    site-discriminative information while MINet-DANN (final and best epoch) reduces domain MCC to
+    near-zero values, confirming successful adversarial harmonisation.}
+  \label{fig:dann_domain_mcc}
+\end{figure}
+
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{manuscript_Biomedical_Signal_Processing_and_Control/Figs/mcc_new_labels_h1-30.png}
+  \caption{Per-institution neuroscreening MCC under the LOSO protocol
+    for MINet (unharmonised baseline), MINet-DANN, MINet-MTL and MINet-DANN-CF. Performance is reported for the optimal model checkpoint (Best epoch) -- the same as for the AUC plot.}
+  \label{fig:all_strategies_mcc}
+\end{figure}
 % -----------------------------------------------------------------------
+\newpage
 \bibliographystyle{elsarticle-num}
 \bibliography{bibliography}
 
