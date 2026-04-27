@@ -1,0 +1,34 @@
+# Site Classification probe on new-label normals
+# 5-fold stratified CV — verifies residual site structure survives harmonization.
+
+experiment_name: "site_clf_newlabels"
+
+paths:
+  info_file: "data/ELM19/filtered/ELM19_info_filtered_norm_newlabels.csv"
+  features_file: "data/ELM19/filtered/ELM19_features_filtered_norm_newlabels.csv"
+  results_file: "results/tables/newlabels/site_clf_results.csv"
+  pipeline_save_dir: "models/newlabels/site_clf_pipelines"
+  shap_data_save_dir: "results/shap_data/newlabels/site_clf"
+
+harmonization_methods:
+  - raw
+  - sitewise
+  - combat
+  - neurocombat
+  - covbat
+
+catboost_params:
+  iterations: 1500
+  learning_rate: 0.07
+  depth: 5
+  l2_leaf_reg: 9
+  task_type: "GPU"
+
+cv:
+  n_splits: 5
+  random_state: 42
+
+data:
+  covariates:
+    - age
+    - gender

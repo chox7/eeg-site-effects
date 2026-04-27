@@ -9,6 +9,8 @@ This preserves the full sample count while migrating to the new labelling.
 Outputs:
   - data/ELM19/filtered/ELM19_info_filtered_newlabels.csv
   - data/ELM19/filtered/ELM19_features_filtered_newlabels.csv
+  - data/ELM19/filtered/ELM19_info_filtered_norm_newlabels.csv      (normals only)
+  - data/ELM19/filtered/ELM19_features_filtered_norm_newlabels.csv  (normals only)
 """
 
 import pandas as pd
@@ -61,6 +63,17 @@ def main():
     print(f"\n  Saved: {info_out} ({len(out_info)} rows)")
     print(f"  Saved: {feat_out} ({len(features)} rows)")
     print(f"  Final label distribution: {out_info['classification'].value_counts().to_dict()}")
+
+    # Normals-only subset for site-classification probe
+    norm_mask = (out_info["classification"] == "norm").values
+    norm_info = out_info[norm_mask].reset_index(drop=True)
+    norm_feat = features[norm_mask].reset_index(drop=True)
+    norm_info_out = f"{OUT_DIR}/ELM19_info_filtered_norm_newlabels.csv"
+    norm_feat_out = f"{OUT_DIR}/ELM19_features_filtered_norm_newlabels.csv"
+    norm_info.to_csv(norm_info_out, index=False)
+    norm_feat.to_csv(norm_feat_out, index=False)
+    print(f"  Saved: {norm_info_out} ({len(norm_info)} rows, normals only)")
+    print(f"  Saved: {norm_feat_out} ({len(norm_feat)} rows, normals only)")
 
 
 if __name__ == "__main__":

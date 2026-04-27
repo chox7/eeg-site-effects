@@ -24,6 +24,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import matthews_corrcoef
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler
 from combatlearn.combat import ComBat
 from src.harmonization.sitewise_scaler import SiteWiseStandardScaler
 from src.config import load_site_classification_config, SiteClassificationConfig
@@ -211,8 +212,11 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
         if model_name == 'catboost':
             pipeline_steps.append(("clf", CatBoostClassifier(**catboost_params)))
         elif model_name == 'logreg':
+            # LogReg is scale-sensitive; RobustScaler keeps the probe's failure mode
+            # attributable to site structure rather than numerical scale.
+            pipeline_steps.append(("scale", RobustScaler()))
             pipeline_steps.append(("clf", LogisticRegression(
-                max_iter=2000, random_state=config.cv.random_state, C=1.0
+                max_iter=20000, random_state=config.cv.random_state, C=1.0
             )))
 
         # Create and Fit Pipeline

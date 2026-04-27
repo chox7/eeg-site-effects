@@ -37,6 +37,9 @@ secrets.yaml
 
 # Logs & Temp Files
 *.log
+*.out
+/logs/
+/results/logs/
 *~
 *.swp
 *.swo
