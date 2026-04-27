@@ -97,6 +97,15 @@ Examples:
         help='Classifier model to use (default: catboost)'
     )
 
+    parser.add_argument(
+        '--k-calibration',
+        dest='k_calibration',
+        type=int,
+        default=None,
+        help='Override config.cv.k_calibration (number of normals from the held-out '
+             'site used to fit the harmonizer). Useful for the k-sweep experiment.'
+    )
+
     return parser.parse_args()
 
 
@@ -350,6 +359,10 @@ def main():
     if args.features:
         config.paths.features_file = args.features
         logger.info(f"Using features file from CLI: {args.features}")
+
+    if args.k_calibration is not None:
+        config.cv.k_calibration = args.k_calibration
+        logger.info(f"Overriding k_calibration from CLI: {args.k_calibration}")
 
     if args.info:
         config.paths.info_file = args.info
