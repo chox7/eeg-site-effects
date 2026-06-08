@@ -28,28 +28,50 @@ _RCPARAMS = {
     # Font
     "font.family":      "sans-serif",
     "font.sans-serif":  ["DejaVu Sans", "Arial", "Helvetica"],
-    "font.size":        11,
-    "axes.titlesize":   13,
-    "axes.labelsize":   12,
-    "xtick.labelsize":  10,
-    "ytick.labelsize":  10,
-    "legend.fontsize":  10,
-    "figure.titlesize": 14,
-    # Axes / grid
-    "axes.spines.top":   False,
-    "axes.spines.right": False,
-    "axes.grid":         True,
-    "grid.linestyle":    "--",
-    "grid.alpha":        0.4,
-    "grid.linewidth":    0.6,
+    "font.size":        12,
+    "axes.titlesize":   16,
+    "axes.titleweight": "bold",
+    "axes.labelsize":   14,
+    "axes.labelweight": "bold",
+    "xtick.labelsize":  12,
+    "ytick.labelsize":  12,
+    "legend.fontsize":  12,
+    "legend.title_fontsize": 13,
+    "figure.titlesize": 17,
+    "figure.titleweight": "bold",
+    # Axes / spines / grid — clean journal look
+    "axes.spines.top":     False,
+    "axes.spines.right":   False,
+    "axes.linewidth":      1.0,
+    "axes.edgecolor":      "#222222",
+    "axes.grid":           True,
+    "axes.axisbelow":      True,   # grid behind data
+    "grid.linestyle":      "--",
+    "grid.alpha":          0.4,
+    "grid.linewidth":      0.6,
+    "grid.color":          "#bbbbbb",
+    # Tick marks
+    "xtick.direction":     "out",
+    "ytick.direction":     "out",
+    "xtick.major.width":   1.0,
+    "ytick.major.width":   1.0,
+    "xtick.major.size":    4,
+    "ytick.major.size":    4,
+    # Legend
+    "legend.framealpha":   0.95,
+    "legend.edgecolor":    "#444444",
+    "legend.fancybox":     False,
     # Figure / save
-    "figure.dpi":     100,
-    "savefig.dpi":    150,
-    "savefig.bbox":   "tight",
-    "savefig.facecolor": "white",
-    # Lines
-    "lines.linewidth": 1.6,
-    "lines.markersize": 6,
+    "figure.dpi":          110,
+    "figure.facecolor":    "white",
+    "savefig.dpi":         200,
+    "savefig.bbox":        "tight",
+    "savefig.facecolor":   "white",
+    # Lines / markers
+    "lines.linewidth":     1.8,
+    "lines.markersize":    8,
+    "lines.markeredgecolor": "#222222",
+    "lines.markeredgewidth": 0.6,
 }
 
 
@@ -107,6 +129,57 @@ DANN_TAG_STYLE: dict[str, tuple[str, str, str]] = {
     "mtl_2layer":  ("#2ca02c", "--", "^"),  # green, dashed, triangle  (2L MTL)
 }
 
+#: Project-wide per-hospital comparison palette
+#: (matches the sibling repo's auc_dann_strategies plot style):
+#:   gray-dotted-square (baseline), blue-dashdot-triangle (DANN raw),
+#:   green-solid-circle (DANN-CF / preferred).
+#: Use for any per-hospital line plot to keep visual consistency.
+VARIANT_STYLE: dict[str, tuple[str, str, str]] = {
+    # name: (color, linestyle, marker)
+    "baseline":     ("#888888", ":",  "s"),  # gray, dotted, square
+    "manual":       ("#888888", ":",  "s"),  # alias for unharmonised reference
+    "raw":          ("#888888", ":",  "s"),  # alias
+    "dann":         ("#1E90FF", "-.", "v"),  # blue, dash-dot, down-triangle   (1L DANN)
+    "dann_raw":     ("#1E90FF", "-.", "v"),  # alias
+    "mtl":          ("#8A2BE2", "--", "D"),  # purple, dashed, diamond         (1L MTL)
+    "dann_2layer":  ("#2ca02c", "-",  "v"),  # green, solid, down-triangle     (2L DANN)
+    "mtl_2layer":   ("#2ca02c", "--", "D"),  # green, dashed, diamond          (2L MTL)
+    "dann_cf":      ("#2ca02c", "-",  "o"),  # green, solid, circle
+    "dann_ft":      ("#2ca02c", "-",  "o"),  # alias for fine-tuned
+    "minet":        ("#888888", ":",  "s"),
+    "minet_mtl":    ("#8A2BE2", "--", "D"),
+    "minet_dann":   ("#1E90FF", "-.", "v"),
+    "minet_dann_cf":("#2ca02c", "-",  "o"),
+    # PCA conditions, when overlayed on per-hospital plots
+    "pca_only":     ("#FF8C00", ":",  "s"),  # orange, dotted, square
+    "pca_full":     ("#2ca02c", "-",  "o"),
+}
+
+
+def per_hospital_plot_kwargs(name: str, *, error_bars: bool = False) -> dict:
+    """Return ready-to-splat matplotlib kwargs for a per-hospital comparison
+    line/scatter using the shared VARIANT_STYLE. Falls back to default style if
+    `name` is unknown."""
+    color, ls, marker = VARIANT_STYLE.get(name, ("#444444", "-", "o"))
+    kw = dict(color=color, linestyle=ls, marker=marker,
+              markersize=8, markeredgecolor="#222222", markeredgewidth=0.7,
+              linewidth=1.8, alpha=0.95, zorder=3)
+    if error_bars:
+        kw["capsize"] = 4
+        kw["capthick"] = 1.2
+        kw["elinewidth"] = 1.0
+    return kw
+
+
+def legend_kwargs(ncol: int = 3, **extra) -> dict:
+    """Standard legend placement for result plots: upper-right, sitting just
+    *above* the plotting area so it never overlaps high scores. Pair with a
+    horizontal layout (ncol = number of variants) and no axes title."""
+    kw = dict(loc="upper right", bbox_to_anchor=(1.0, 1.10),
+              ncol=ncol, framealpha=0.95, frameon=True, borderaxespad=0.0)
+    kw.update(extra)
+    return kw
+
 #: Canonical ordering for ablation conditions.
 ABLATION_CONDITION_ORDER: list[str] = [
     "full_coh", "full_pow", "full_cov",
@@ -140,3 +213,19 @@ def hospital_color(h_id: str, included: str = "#4C72B0",
                    excluded: str = "#9E9E9E") -> str:
     """Return colour for a hospital label — included (H_i) vs excluded (X_i)."""
     return included if str(h_id).startswith("H") else excluded
+
+
+def subject_colors(subjects: Any,
+                   cmaps: tuple[str, ...] = ("tab20", "tab20b")) -> dict[str, tuple]:
+    """Assign each subject (e.g. hospital) a distinct, stable colour.
+
+    Subjects are naturally sorted (H1, H2, …, H10) then mapped through the given
+    qualitative colormaps in turn, so up to ~40 hospitals get unique colours and
+    the mapping is reproducible across figures for the same id set. Used by the
+    paired per-hospital plots to track individual sites across conditions.
+    """
+    subs = sorted({str(s) for s in subjects}, key=natural_sort_key)
+    palette: list = []
+    for name in cmaps:
+        palette.extend(plt.get_cmap(name).colors)
+    return {s: palette[i % len(palette)] for i, s in enumerate(subs)}
