@@ -97,6 +97,15 @@ Examples:
         help='Classifier model to use (default: catboost)'
     )
 
+    parser.add_argument(
+        '--results-file',
+        dest='results_file',
+        type=str,
+        default=None,
+        help='Override config.paths.results_file (useful for parallel runs that '
+             'would otherwise race on the same CSV).'
+    )
+
     return parser.parse_args()
 
 
@@ -242,12 +251,12 @@ def run_experiment(config: SiteClassificationConfig, harmonization_method: str =
             logger.info("Saving pipeline and test data for Fold 0 (for SHAP analysis)...")
 
             tag_suffix = f"_{tag}" if tag else ""
-            pipeline_filename = f"{harmonization_method}{tag_suffix}_pipeline_fold0.joblib"
+            pipeline_filename = f"{harmonization_method}_{model_name}{tag_suffix}_pipeline_fold0.joblib"
             pipeline_save_path = os.path.join(config.paths.pipeline_save_dir, pipeline_filename)
             joblib.dump(pipeline, pipeline_save_path)
             logger.info(f"Pipeline saved to: {pipeline_save_path}")
 
-            test_data_filename = f"{harmonization_method}{tag_suffix}_test_data_fold0.parquet"
+            test_data_filename = f"{harmonization_method}_{model_name}{tag_suffix}_test_data_fold0.parquet"
             test_data_save_path = os.path.join(config.paths.shap_data_save_dir, test_data_filename)
             X_test_to_save = X_test.copy()
             X_test_to_save['y_true_hospital'] = y_test
@@ -287,6 +296,10 @@ def main():
     if args.info:
         config.paths.info_file = args.info
         logger.info(f"Using info file from CLI: {args.info}")
+
+    if args.results_file:
+        config.paths.results_file = args.results_file
+        logger.info(f"Using results file from CLI: {args.results_file}")
 
     if config.experiment_name:
         logger.info(f"Running experiment: {config.experiment_name}")
