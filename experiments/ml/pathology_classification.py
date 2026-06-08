@@ -106,6 +106,15 @@ Examples:
              'site used to fit the harmonizer). Useful for the k-sweep experiment.'
     )
 
+    parser.add_argument(
+        '--results-file',
+        dest='results_file',
+        type=str,
+        default=None,
+        help='Override config.paths.results_file (useful for parallel runs that '
+             'would otherwise race on the same CSV).'
+    )
+
     return parser.parse_args()
 
 
@@ -321,11 +330,11 @@ def run_experiment(config: PathologyClassificationConfig, harmonization_method: 
 
             # Save Pipeline
             tag_suffix = f"_{tag}" if tag else ""
-            pipeline_filename = f"{harmonization_method}_{hospital_test}{tag_suffix}_pipeline.joblib"
+            pipeline_filename = f"{harmonization_method}_{hospital_test}_{model_name}{tag_suffix}_pipeline.joblib"
             joblib.dump(pipeline, os.path.join(config.paths.pipeline_save_dir, pipeline_filename))
 
             # Save Test Data (Untransformed X_test_full + Labels)
-            test_data_filename = f"{harmonization_method}_{hospital_test}{tag_suffix}_test_data.parquet"
+            test_data_filename = f"{harmonization_method}_{hospital_test}_{model_name}{tag_suffix}_test_data.parquet"
             X_test_save = X_test_full.copy()
             X_test_save['y_true'] = y_test_full
             X_test_save.to_parquet(os.path.join(config.paths.shap_data_save_dir, test_data_filename))
@@ -367,6 +376,10 @@ def main():
     if args.info:
         config.paths.info_file = args.info
         logger.info(f"Using info file from CLI: {args.info}")
+
+    if args.results_file:
+        config.paths.results_file = args.results_file
+        logger.info(f"Using results file from CLI: {args.results_file}")
 
     if config.experiment_name:
         logger.info(f"Running experiment: {config.experiment_name}")
