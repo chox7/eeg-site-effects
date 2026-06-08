@@ -8,6 +8,12 @@ DATASET OVERVIEW
   Normal recordings: 26,568
   Pathological recordings: 28,211
   Norm fraction: 48.5%
+  Female recordings (ELM_s): 28,960 (52.9%)
+
+FULL CORPUS (ELM19, all 39 institutions, pre-filter)
+  Total recordings: 55,787
+  Pathological fraction: 52.1%
+  Female fraction: 52.9%
 
 DEMOGRAPHICS (ELM_n)
   Age range: 16.0 – 70.0 years
@@ -30,10 +36,6 @@ ACQUISITION SOFTWARE
 SAMPLING FREQUENCY (ELM_n)
   Dominant sfreq: 250.0 Hz
   Recordings ≥600 Hz: 10
-
-SPECIALIST / CHILDREN HOSPITALS
-  Specialist hospitals: 4
-  Children hospitals  : 0
 
 ACQUISITION FILTERS (ELM_n)
   Recordings with highpass=0 Hz : 20,843

@@ -31,6 +31,10 @@ SAMPLING FREQUENCY (ELM_n)
   Dominant sfreq: 250.0 Hz
   Recordings ≥600 Hz: 10
 
+SPECIALIST / CHILDREN HOSPITALS
+  Specialist hospitals: 4
+  Children hospitals  : 0
+
 ACQUISITION FILTERS (ELM_n)
   Recordings with highpass=0 Hz : 20,843
   Recordings with highpass=0.16 Hz: 5,466
