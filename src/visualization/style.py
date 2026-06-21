@@ -122,11 +122,12 @@ GROUP_COLOR: dict[str, str] = {
 #: line style by training variant.
 DANN_TAG_STYLE: dict[str, tuple[str, str, str]] = {
     # tag: (color, linestyle, marker)
-    "baseline":    ("#7f7f7f", "-",  "o"),  # gray, solid, circle
-    "dann":        ("#d62728", "-",  "s"),  # red,  solid, square      (1L DANN)
-    "mtl":         ("#d62728", "--", "^"),  # red,  dashed, triangle   (1L MTL)
-    "dann_2layer": ("#2ca02c", "-",  "s"),  # green, solid, square     (2L DANN)
-    "mtl_2layer":  ("#2ca02c", "--", "^"),  # green, dashed, triangle  (2L MTL)
+    "baseline":        ("#7f7f7f", "-",  "o"),  # gray, solid, circle      (1L baseline)
+    "dann":            ("#d62728", "-",  "s"),  # red,  solid, square      (1L DANN)
+    "mtl":             ("#d62728", "--", "^"),  # red,  dashed, triangle   (1L MTL)
+    "baseline_2layer": ("#2ca02c", "-",  "o"),  # green, solid, circle     (2L baseline)
+    "dann_2layer":     ("#2ca02c", "-",  "s"),  # green, solid, square     (2L DANN)
+    "mtl_2layer":      ("#2ca02c", "--", "^"),  # green, dashed, triangle  (2L MTL)
 }
 
 #: Project-wide per-hospital comparison palette
@@ -142,6 +143,7 @@ VARIANT_STYLE: dict[str, tuple[str, str, str]] = {
     "dann":         ("#1E90FF", "-.", "v"),  # blue, dash-dot, down-triangle   (1L DANN)
     "dann_raw":     ("#1E90FF", "-.", "v"),  # alias
     "mtl":          ("#8A2BE2", "--", "D"),  # purple, dashed, diamond         (1L MTL)
+    "baseline_2layer": ("#2ca02c", "-", "s"),  # green, solid, square          (2L baseline)
     "dann_2layer":  ("#2ca02c", "-",  "v"),  # green, solid, down-triangle     (2L DANN)
     "mtl_2layer":   ("#2ca02c", "--", "D"),  # green, dashed, diamond          (2L MTL)
     "dann_cf":      ("#2ca02c", "-",  "o"),  # green, solid, circle
